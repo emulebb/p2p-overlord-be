@@ -3,6 +3,7 @@
 		AgentInterfacesView,
 		InterfaceBindingSelection,
 		InterfaceSelectionState,
+		KadHarvestObservability,
 		KadPublishObservability,
 		SearchJobStatusView,
 		SnoopDashboardEntry
@@ -14,6 +15,8 @@
 	import SummaryCard from '$lib/components/SummaryCard.svelte';
 	import {
 		desiredNatBackend,
+		formatHarvestFamily,
+		formatPassiveReplay,
 		formatPublishBatch,
 		formatSeedSource,
 		formatSnoopDetails,
@@ -166,6 +169,23 @@
 			return 'warn';
 		}
 		return 'accent';
+	}
+
+	function harvestTone(observability: KadHarvestObservability | null): BadgeTone {
+		if (!observability) {
+			return 'neutral';
+		}
+		if (
+			observability.keyword_requests.observed_requests > 0 ||
+			observability.source_requests.observed_requests > 0 ||
+			observability.notes_requests.observed_requests > 0
+		) {
+			return 'good';
+		}
+		if (observability.passive_keyword_replay.idle_cycles > 0) {
+			return 'accent';
+		}
+		return 'warn';
 	}
 
 	onMount(() => {
@@ -546,6 +566,71 @@
 									{:else}
 										<p class="message message--accent">
 											Publish observability is still pending from this agent.
+										</p>
+									{/if}
+								</section>
+
+								<section class="subpanel">
+									<div class="page-header">
+										<div>
+											<h4>Harvest observability</h4>
+											<p>Track unsolicited Kad demand and passive replay activity by family.</p>
+										</div>
+										<StatusBadge
+											tone={harvestTone(agent.harvest_observability)}
+											text={agent.harvest_observability ? 'harvest telemetry' : 'telemetry pending'}
+										/>
+									</div>
+
+									{#if agent.harvest_observability}
+										<div class="metrics-grid">
+											<section class="subpanel">
+												<h4>Inbound demand</h4>
+												<dl class="kv-list">
+													<div class="kv-row">
+														<dt>Keyword requests</dt>
+														<dd>{formatHarvestFamily(agent.harvest_observability.keyword_requests)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Source requests</dt>
+														<dd>{formatHarvestFamily(agent.harvest_observability.source_requests)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Notes requests</dt>
+														<dd>{formatHarvestFamily(agent.harvest_observability.notes_requests)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Last keyword seen</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.keyword_requests.last_seen_at)}</dd>
+													</div>
+												</dl>
+											</section>
+
+											<section class="subpanel">
+												<h4>Passive replay</h4>
+												<dl class="kv-list">
+													<div class="kv-row">
+														<dt>Keyword replay</dt>
+														<dd>{formatPassiveReplay(agent.harvest_observability.passive_keyword_replay)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Last start</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.passive_keyword_replay.last_started_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Last completion</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.passive_keyword_replay.last_completed_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Last target</dt>
+														<dd>{agent.harvest_observability.passive_keyword_replay.last_target ?? 'Pending'}</dd>
+													</div>
+												</dl>
+											</section>
+										</div>
+									{:else}
+										<p class="message message--accent">
+											Harvest observability is still pending from this agent.
 										</p>
 									{/if}
 								</section>

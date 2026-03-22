@@ -3,6 +3,8 @@ import type {
 	FileRecord,
 	InterfaceBindingReport,
 	InterfaceBindingSelection,
+	KadHarvestFamilyObservability,
+	KadPassiveReplayObservability,
 	KadPublishObservability,
 	PublishBatchSummary,
 	SnoopDashboardEntry
@@ -91,6 +93,22 @@ export function formatPublishBatch(summary: PublishBatchSummary | null): string 
 	}
 
 	return `items=${summary.published_items} acked=${summary.acked_contacts}/${summary.attempted_contacts} failed=${summary.failed_contacts} timed_out=${summary.timed_out_contacts}`;
+}
+
+export function formatHarvestFamily(summary: KadHarvestFamilyObservability | null): string {
+	if (!summary) {
+		return 'Pending';
+	}
+
+	return `${summary.observed_requests} seen · ${summary.unique_shapes_observed} unique · ${summary.queued_entries} queued`;
+}
+
+export function formatPassiveReplay(summary: KadPassiveReplayObservability | null): string {
+	if (!summary) {
+		return 'Pending';
+	}
+
+	return `${summary.completed_cycles}/${summary.started_cycles} cycles · ${summary.emitted_results} results · ${summary.posted_batches} batches`;
 }
 
 export function summarizeBinding(report: InterfaceBindingReport | null, label: string): string {

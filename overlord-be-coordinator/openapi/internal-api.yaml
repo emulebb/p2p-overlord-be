@@ -611,6 +611,275 @@ components:
           allOf:
             - $ref: '#/components/schemas/AgentNetworkReport'
           nullable: true
+        publish_observability:
+          allOf:
+            - $ref: '#/components/schemas/KadPublishObservability'
+          nullable: true
+        harvest_observability:
+          allOf:
+            - $ref: '#/components/schemas/KadHarvestObservability'
+          nullable: true
+    PublishSeedSource:
+      type: string
+      enum: [coordinator, synthetic_fallback, manual_api]
+    PublishBatchSummary:
+      type: object
+      required:
+        [
+          seed_source,
+          published_items,
+          closest_contacts_considered,
+          attempted_contacts,
+          acked_contacts,
+          failed_contacts,
+          timed_out_contacts,
+          completed_at,
+          last_success_at
+        ]
+      properties:
+        seed_source:
+          $ref: '#/components/schemas/PublishSeedSource'
+        published_items:
+          type: integer
+        closest_contacts_considered:
+          type: integer
+        attempted_contacts:
+          type: integer
+        acked_contacts:
+          type: integer
+        failed_contacts:
+          type: integer
+        timed_out_contacts:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+        last_success_at:
+          type: string
+          format: date-time
+          nullable: true
+    PublishCounters:
+      type: object
+      required:
+        [
+          batches,
+          published_items,
+          closest_contacts_considered,
+          attempted_contacts,
+          acked_contacts,
+          failed_contacts,
+          timed_out_contacts,
+          last_batch_at,
+          last_success_at
+        ]
+      properties:
+        batches:
+          type: integer
+          format: int64
+        published_items:
+          type: integer
+          format: int64
+        closest_contacts_considered:
+          type: integer
+          format: int64
+        attempted_contacts:
+          type: integer
+          format: int64
+        acked_contacts:
+          type: integer
+          format: int64
+        failed_contacts:
+          type: integer
+          format: int64
+        timed_out_contacts:
+          type: integer
+          format: int64
+        last_batch_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_success_at:
+          type: string
+          format: date-time
+          nullable: true
+    AgentLogFileStatus:
+      type: object
+      required: [path, rotation, max_files, last_write_at]
+      properties:
+        path:
+          type: string
+        rotation:
+          type: string
+        max_files:
+          type: integer
+        last_write_at:
+          type: string
+          format: date-time
+          nullable: true
+    KadPublishObservability:
+      type: object
+      required:
+        [
+          last_seed_source,
+          last_seed_at,
+          latest_keyword_batch,
+          latest_source_batch,
+          keyword_counters,
+          source_counters,
+          log_file
+        ]
+      properties:
+        last_seed_source:
+          allOf:
+            - $ref: '#/components/schemas/PublishSeedSource'
+          nullable: true
+        last_seed_at:
+          type: string
+          format: date-time
+          nullable: true
+        latest_keyword_batch:
+          allOf:
+            - $ref: '#/components/schemas/PublishBatchSummary'
+          nullable: true
+        latest_source_batch:
+          allOf:
+            - $ref: '#/components/schemas/PublishBatchSummary'
+          nullable: true
+        keyword_counters:
+          $ref: '#/components/schemas/PublishCounters'
+        source_counters:
+          $ref: '#/components/schemas/PublishCounters'
+        log_file:
+          allOf:
+            - $ref: '#/components/schemas/AgentLogFileStatus'
+          nullable: true
+    KadHarvestFamilyObservability:
+      type: object
+      required:
+        [
+          observed_requests,
+          unique_shapes_observed,
+          queued_entries,
+          last_seen_at,
+          last_from,
+          last_target,
+          last_start_position,
+          last_size,
+          last_restrictive_bytes
+        ]
+      properties:
+        observed_requests:
+          type: integer
+          format: int64
+        unique_shapes_observed:
+          type: integer
+          format: int64
+        queued_entries:
+          type: integer
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_from:
+          type: string
+          nullable: true
+        last_target:
+          type: string
+          nullable: true
+        last_start_position:
+          type: integer
+          nullable: true
+        last_size:
+          type: integer
+          format: int64
+          nullable: true
+        last_restrictive_bytes:
+          type: integer
+          nullable: true
+    KadPassiveReplayObservability:
+      type: object
+      required:
+        [
+          started_cycles,
+          completed_cycles,
+          idle_cycles,
+          emitted_results,
+          posted_batches,
+          post_failures,
+          last_started_at,
+          last_completed_at,
+          last_idle_at,
+          last_error_at,
+          last_target,
+          last_start_position,
+          last_restrictive_bytes,
+          last_result_count,
+          last_batches_posted,
+          last_error
+        ]
+      properties:
+        started_cycles:
+          type: integer
+          format: int64
+        completed_cycles:
+          type: integer
+          format: int64
+        idle_cycles:
+          type: integer
+          format: int64
+        emitted_results:
+          type: integer
+          format: int64
+        posted_batches:
+          type: integer
+          format: int64
+        post_failures:
+          type: integer
+          format: int64
+        last_started_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_idle_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_error_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_target:
+          type: string
+          nullable: true
+        last_start_position:
+          type: integer
+          nullable: true
+        last_restrictive_bytes:
+          type: integer
+          nullable: true
+        last_result_count:
+          type: integer
+        last_batches_posted:
+          type: integer
+        last_error:
+          type: string
+          nullable: true
+    KadHarvestObservability:
+      type: object
+      required: [keyword_requests, source_requests, notes_requests, passive_keyword_replay]
+      properties:
+        keyword_requests:
+          $ref: '#/components/schemas/KadHarvestFamilyObservability'
+        source_requests:
+          $ref: '#/components/schemas/KadHarvestFamilyObservability'
+        notes_requests:
+          $ref: '#/components/schemas/KadHarvestFamilyObservability'
+        passive_keyword_replay:
+          $ref: '#/components/schemas/KadPassiveReplayObservability'
     ConfigUpdate:
       type: object
       required: [protocol, config]

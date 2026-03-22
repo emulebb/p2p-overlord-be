@@ -16,6 +16,7 @@ import {
 	getAgentNetworkingConfig,
 	getAgentInterfaceState,
 	getRegistration,
+	storeAgentHarvestObservability,
 	storeAgentInterfaceError,
 	storeAgentInterfaceReport,
 	storeAgentNatStatus,
@@ -348,6 +349,7 @@ async function refreshAgentInterfaceInternal(
 		storeAgentInterfaceReport(indexerId, report);
 		storeAgentNatStatus(indexerId, stats.nat);
 		storeAgentPublishObservability(indexerId, stats.publish_observability);
+		storeAgentHarvestObservability(indexerId, stats.harvest_observability);
 		const config = getAgentNetworkingConfig(indexerId);
 		log.debug('agent_interface_refresh_stats', {
 			indexer_id: indexerId,

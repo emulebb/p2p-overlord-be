@@ -8,6 +8,7 @@ import type {
 	AgentNetworkingConfig,
 	AgentP2pConfig,
 	InterfaceBindingSelection,
+	KadHarvestObservability,
 	KadPublishObservability,
 	FileRecord,
 	IndexerRegistration,
@@ -40,6 +41,7 @@ type CoordinatorState = {
 	agentNetworkingConfigs: Map<string, AgentNetworkingConfig>;
 	agentNatStatuses: Map<string, NatStatusSnapshot | null>;
 	agentPublishObservability: Map<string, KadPublishObservability | null>;
+	agentHarvestObservability: Map<string, KadHarvestObservability | null>;
 	agentInterfaceErrors: Map<string, string | null>;
 	searchJobs: Map<string, SearchDispatch>;
 	filesByHash: Map<string, AggregatedFile>;
@@ -59,6 +61,7 @@ function createState(): CoordinatorState {
 		agentNetworkingConfigs: new Map(),
 		agentNatStatuses: new Map(),
 		agentPublishObservability: new Map(),
+		agentHarvestObservability: new Map(),
 		agentInterfaceErrors: new Map(),
 		searchJobs: new Map(),
 		filesByHash: new Map(),
@@ -79,6 +82,14 @@ function getAgentPublishObservabilityStore(): Map<string, KadPublishObservabilit
 	return coordinatorState.agentPublishObservability;
 }
 
+function getAgentHarvestObservabilityStore(): Map<string, KadHarvestObservability | null> {
+	// Older hot-reloaded coordinator state objects may not have this map yet.
+	if (!coordinatorState.agentHarvestObservability) {
+		coordinatorState.agentHarvestObservability = new Map();
+	}
+	return coordinatorState.agentHarvestObservability;
+}
+
 export function registerIndexer(payload: RegisterRequest): IndexerRegistration {
 	const registered: IndexerRegistration = {
 		...payload,
@@ -91,6 +102,8 @@ export function registerIndexer(payload: RegisterRequest): IndexerRegistration {
 	const existingNatStatus = coordinatorState.agentNatStatuses.get(payload.indexer_id) ?? null;
 	const existingPublishObservability =
 		getAgentPublishObservabilityStore().get(payload.indexer_id) ?? null;
+	const existingHarvestObservability =
+		getAgentHarvestObservabilityStore().get(payload.indexer_id) ?? null;
 	const existingError = coordinatorState.agentInterfaceErrors.get(payload.indexer_id) ?? null;
 	coordinatorState.registrations.set(payload.indexer_id, registered);
 	coordinatorState.agentNetworkingConfigs.set(payload.indexer_id, existingConfig);
@@ -99,6 +112,10 @@ export function registerIndexer(payload: RegisterRequest): IndexerRegistration {
 	getAgentPublishObservabilityStore().set(
 		payload.indexer_id,
 		existingPublishObservability
+	);
+	getAgentHarvestObservabilityStore().set(
+		payload.indexer_id,
+		existingHarvestObservability
 	);
 	coordinatorState.agentInterfaceErrors.set(payload.indexer_id, existingError);
 	log.info('state_register_indexer', {
@@ -208,6 +225,13 @@ export function storeAgentPublishObservability(
 	getAgentPublishObservabilityStore().set(indexerId, observability);
 }
 
+export function storeAgentHarvestObservability(
+	indexerId: string,
+	observability: KadHarvestObservability | null
+): void {
+	getAgentHarvestObservabilityStore().set(indexerId, observability);
+}
+
 export function storeAgentInterfaceError(indexerId: string, error: string): void {
 	coordinatorState.agentInterfaceErrors.set(indexerId, error);
 	log.warn('state_store_interface_error', {
@@ -257,6 +281,10 @@ export function getAgentPublishObservability(indexerId: string): KadPublishObser
 	return getAgentPublishObservabilityStore().get(indexerId) ?? null;
 }
 
+export function getAgentHarvestObservability(indexerId: string): KadHarvestObservability | null {
+	return getAgentHarvestObservabilityStore().get(indexerId) ?? null;
+}
+
 export function getAgentInterfaceState() {
 	return coordinatorState.agentInterfaceReports;
 }
@@ -268,6 +296,7 @@ export function listAgentDashboard() {
 		config: getAgentNetworkingConfig(registration.indexer_id),
 		nat: getAgentNatStatus(registration.indexer_id),
 		publish_observability: getAgentPublishObservability(registration.indexer_id),
+		harvest_observability: getAgentHarvestObservability(registration.indexer_id),
 		last_error: getAgentInterfaceError(registration.indexer_id)
 	}));
 }

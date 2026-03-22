@@ -281,12 +281,51 @@ export type KadPublishObservability = {
 	log_file: AgentLogFileStatus | null;
 };
 
+export type KadHarvestFamilyObservability = {
+	observed_requests: number;
+	unique_shapes_observed: number;
+	queued_entries: number;
+	last_seen_at: string | null;
+	last_from: string | null;
+	last_target: string | null;
+	last_start_position: number | null;
+	last_size: number | null;
+	last_restrictive_bytes: number | null;
+};
+
+export type KadPassiveReplayObservability = {
+	started_cycles: number;
+	completed_cycles: number;
+	idle_cycles: number;
+	emitted_results: number;
+	posted_batches: number;
+	post_failures: number;
+	last_started_at: string | null;
+	last_completed_at: string | null;
+	last_idle_at: string | null;
+	last_error_at: string | null;
+	last_target: string | null;
+	last_start_position: number | null;
+	last_restrictive_bytes: number | null;
+	last_result_count: number;
+	last_batches_posted: number;
+	last_error: string | null;
+};
+
+export type KadHarvestObservability = {
+	keyword_requests: KadHarvestFamilyObservability;
+	source_requests: KadHarvestFamilyObservability;
+	notes_requests: KadHarvestFamilyObservability;
+	passive_keyword_replay: KadPassiveReplayObservability;
+};
+
 export type AgentInterfacesView = {
 	registration: IndexerRegistration;
 	report: AgentNetworkReport | null;
 	config: AgentNetworkingConfig;
 	nat: NatStatusSnapshot | null;
 	publish_observability: KadPublishObservability | null;
+	harvest_observability: KadHarvestObservability | null;
 	last_error: string | null;
 };
 
@@ -301,6 +340,7 @@ export type IndexerStats = {
 	nat: NatStatusSnapshot | null;
 	interface_report: AgentNetworkReport | null;
 	publish_observability: KadPublishObservability | null;
+	harvest_observability: KadHarvestObservability | null;
 };
 
 export type ConfigUpdate = {
