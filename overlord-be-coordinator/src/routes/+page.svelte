@@ -2,64 +2,55 @@
 	import type {
 		AgentInterfacesView,
 		InterfaceBindingSelection,
+		InterfaceSelectionState,
 		KadPublishObservability,
-		PublishBatchSummary,
 		SearchJobStatusView,
 		SnoopDashboardEntry
 	} from '$lib/shared/internal-api';
 	import { onMount } from 'svelte';
 
+	import Panel from '$lib/components/Panel.svelte';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import SummaryCard from '$lib/components/SummaryCard.svelte';
+	import {
+		desiredNatBackend,
+		formatPublishBatch,
+		formatSeedSource,
+		formatSnoopDetails,
+		formatTimestamp,
+		isAnyBindingOption,
+		shortIndexerId,
+		summarizeBinding,
+		summarizeExternalAddress
+	} from '$lib/ui/formatters';
+
 	const ANY_BIND_OPTION = '__any__';
+
+	type ShellStatus = {
+		registered_agents: number;
+		search_jobs: number;
+		file_count: number;
+		search_results: number;
+		result_batches: number;
+	};
+
+	type BadgeTone = 'neutral' | 'accent' | 'good' | 'warn' | 'danger';
+
+	export let data:
+		| {
+				shellStatus: ShellStatus;
+				agents: AgentInterfacesView[];
+				searches: SearchJobStatusView[];
+				snoops: SnoopDashboardEntry[];
+		  }
+		| undefined;
+
 	let query = '';
 	let searchError = '';
 	let creatingSearch = false;
 	let snoops: SnoopDashboardEntry[] = [];
 
-	function isAnyBindingOption(binding: InterfaceBindingSelection): boolean {
-		return binding.bind_iface === null && binding.bind_ip === '0.0.0.0';
-	}
-
-	function desiredNatBackend(agent: AgentInterfacesView): string {
-		return agent.config.nat.p2p.backend_order[0] ?? 'upnp_miniupnpc';
-	}
-
-	function shortIndexerId(indexerId: string): string {
-		return indexerId.slice(0, 8);
-	}
-
-	function formatSnoopDetails(entry: SnoopDashboardEntry): string {
-		switch (entry.family) {
-			case 'keyword':
-				return entry.restrictive_payload_hex
-					? `start=${entry.start_position} restrictive=${entry.restrictive_payload_hex}`
-					: `start=${entry.start_position}`;
-			case 'source':
-				return `start=${entry.start_position} size=${entry.size}`;
-			case 'notes':
-				return `size=${entry.size}`;
-		}
-	}
-
-	function formatTimestamp(value: string | null): string {
-		if (!value) {
-			return 'pending';
-		}
-		return new Date(value).toLocaleString();
-	}
-
-	function formatSeedSource(value: KadPublishObservability['last_seed_source']): string {
-		if (!value) {
-			return 'pending';
-		}
-		return value.replaceAll('_', ' ');
-	}
-
-	function formatPublishBatch(summary: PublishBatchSummary | null): string {
-		if (!summary) {
-			return 'pending';
-		}
-		return `items=${summary.published_items} acked=${summary.acked_contacts}/${summary.attempted_contacts} failed=${summary.failed_contacts} timed_out=${summary.timed_out_contacts}`;
-	}
+	$: snoops = data?.snoops ?? [];
 
 	async function startSearch() {
 		const trimmed = query.trim();
@@ -87,7 +78,7 @@
 				throw new Error(payload.error ?? `search request failed with ${response.status}`);
 			}
 			const payload = (await response.json()) as SearchJobStatusView;
-			window.location.href = `/search/${payload.job_id}`;
+			window.location.assign(`/search/${payload.job_id}`);
 		} catch (error) {
 			searchError = error instanceof Error ? error.message : String(error);
 		} finally {
@@ -95,40 +86,110 @@
 		}
 	}
 
-	export let data:
-		| {
-				status: {
-					registered_agents: number;
-					search_jobs: number;
-					file_count: number;
-					search_results: number;
-				};
-				agents: AgentInterfacesView[];
-				searches: SearchJobStatusView[];
-				snoops: SnoopDashboardEntry[];
-		  }
-		| undefined;
+	function selectionTone(state: InterfaceSelectionState | null | undefined, ready = false): BadgeTone {
+		if (ready) {
+			return 'good';
+		}
 
-	$: snoops = data?.snoops ?? [];
+		switch (state) {
+			case 'error':
+				return 'danger';
+			case 'confirmed':
+			case 'applied':
+				return 'accent';
+			case 'pending':
+			default:
+				return 'warn';
+		}
+	}
+
+	function agentTone(agent: AgentInterfacesView): BadgeTone {
+		if (agent.last_error) {
+			return 'danger';
+		}
+		if (agent.report?.control.ready && agent.report?.p2p.ready) {
+			return 'good';
+		}
+		if (agent.report) {
+			return 'warn';
+		}
+		return 'neutral';
+	}
+
+	function agentStatus(agent: AgentInterfacesView): string {
+		if (agent.last_error) {
+			return 'degraded';
+		}
+		if (agent.report?.control.ready && agent.report?.p2p.ready) {
+			return 'ready';
+		}
+		if (agent.report) {
+			return 'config pending';
+		}
+		return 'awaiting report';
+	}
+
+	function natTone(agent: AgentInterfacesView): BadgeTone {
+		if (!agent.config.nat.p2p.enabled) {
+			return 'neutral';
+		}
+		if (agent.nat?.last_error) {
+			return 'danger';
+		}
+		if (agent.nat?.gateway_discovered) {
+			return 'good';
+		}
+		return 'warn';
+	}
+
+	function natStatus(agent: AgentInterfacesView): string {
+		if (!agent.config.nat.p2p.enabled) {
+			return 'disabled';
+		}
+		if (agent.nat?.last_error) {
+			return 'gateway error';
+		}
+		if (agent.nat?.gateway_discovered) {
+			return 'gateway ready';
+		}
+		return 'discovering';
+	}
+
+	function publishTone(observability: KadPublishObservability | null): BadgeTone {
+		if (!observability) {
+			return 'neutral';
+		}
+		if (
+			observability.keyword_counters.failed_contacts > 0 ||
+			observability.source_counters.failed_contacts > 0
+		) {
+			return 'warn';
+		}
+		return 'accent';
+	}
 
 	onMount(() => {
 		let cancelled = false;
+
 		async function refreshSnoops() {
 			try {
 				const response = await fetch('/api/snoop');
 				if (!response.ok) {
 					return;
 				}
+
 				const payload = (await response.json()) as { entries: SnoopDashboardEntry[] };
 				if (!cancelled) {
 					snoops = payload.entries;
 				}
 			} catch {
-				// Keep the dashboard usable even when the background refresh fails.
+				// Keep the dashboard usable when background refreshes fail.
 			}
 		}
+
 		const interval = window.setInterval(refreshSnoops, 10000);
 		refreshSnoops();
+
 		return () => {
 			cancelled = true;
 			window.clearInterval(interval);
@@ -137,332 +198,588 @@
 </script>
 
 <svelte:head>
-	<title>overlord-be-coordinator</title>
+	<title>Coordinator Console</title>
 </svelte:head>
 
-<main>
-	<h1>overlord-be-coordinator</h1>
-	<p>Phase 1 coordinator scaffold for Overlord agents.</p>
+<main class="page">
+	<section class="page-header">
+		<div>
+			<p class="eyebrow">Dashboard</p>
+			<h2>Coordinator overview</h2>
+			<p>Track agent readiness, launch searches, and watch harvested Kad demand without leaving the console.</p>
+		</div>
+		<div class="badge-row">
+			<StatusBadge
+				tone={data && data.agents.length > 0 ? 'good' : 'warn'}
+				text={data && data.agents.length > 0 ? 'agents online' : 'waiting for agents'}
+			/>
+			<StatusBadge
+				tone={snoops.length > 0 ? 'accent' : 'neutral'}
+				text={snoops.length > 0 ? 'snoop feed warm' : 'no harvested demand yet'}
+			/>
+		</div>
+	</section>
 
 	{#if data}
-		<ul>
-			<li>Registered agents: {data.status.registered_agents}</li>
-			<li>Search jobs: {data.status.search_jobs}</li>
-			<li>Indexed files: {data.status.file_count}</li>
-			<li>Search results: {data.status.search_results}</li>
-		</ul>
-
-		<section>
-			<h2>Kad Search</h2>
-			<label>
-				Keyword query
-				<input bind:value={query} placeholder="ubuntu iso" />
-			</label>
-			<button type="button" on:click={startSearch} disabled={creatingSearch}>
-				{creatingSearch ? 'Starting...' : 'Start search'}
-			</button>
-			{#if searchError}
-				<p>{searchError}</p>
-			{/if}
-
-			{#if data.searches.length > 0}
-				<h3>Recent jobs</h3>
-				<ul>
-					{#each data.searches as search}
-						<li>
-							<a href={`/search/${search.job_id}`}>{search.query ?? search.job_id}</a>
-							· {search.status} · results: {search.result_count}
-						</li>
-					{/each}
-				</ul>
-			{/if}
+		<section class="summary-grid" aria-label="Coordinator summary">
+			<SummaryCard
+				label="Registered Agents"
+				value={data.shellStatus.registered_agents}
+				hint="Known agent registrations in the coordinator."
+				tone="accent"
+			/>
+			<SummaryCard
+				label="Indexed Files"
+				value={data.shellStatus.file_count}
+				hint="Promoted file rows available for browse and search flows."
+				tone="good"
+			/>
+			<SummaryCard
+				label="Search Jobs"
+				value={data.shellStatus.search_jobs}
+				hint="Persisted jobs across queued, active, and completed searches."
+				tone="warn"
+			/>
+			<SummaryCard
+				label="Search Results"
+				value={data.shellStatus.search_results}
+				hint={`${data.shellStatus.result_batches} result batches observed by the coordinator.`}
+			/>
 		</section>
 
-		<section>
-			<h2>Harvested Kad Queries</h2>
-			<p>Auto-refreshes every 10 seconds from the persisted snoop queue.</p>
-			{#if snoops.length > 0}
-				<table>
-					<thead>
-						<tr>
-							<th>Seen</th>
-							<th>Family</th>
-							<th>Target</th>
-							<th>Details</th>
-							<th>Hits</th>
-							<th>Drained</th>
-							<th>Agent</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each snoops as snoop}
-							<tr>
-								<td>{formatTimestamp(snoop.last_seen)}</td>
-								<td>{snoop.family}</td>
-								<td><code>{snoop.target}</code></td>
-								<td>{formatSnoopDetails(snoop)}</td>
-								<td>{snoop.hit_count}</td>
-								<td>{formatTimestamp(snoop.last_drained_at)}</td>
-								<td>{snoop.hostname ?? snoop.protocol ?? 'agent'} · {shortIndexerId(snoop.indexer_id)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			{:else}
-				<p>No harvested Kad queries yet.</p>
-			{/if}
-		</section>
+		<section class="split-grid">
+			<Panel
+				title="Quick Search"
+				subtitle="Launch a Kad keyword search and jump straight into the live job view."
+			>
+				<div class="stack" id="quick-search">
+					<form class="inline-form" on:submit|preventDefault={startSearch}>
+						<label class="field">
+							<span>Keyword query</span>
+							<input
+								class="input"
+								bind:value={query}
+								placeholder="ubuntu linux"
+								autocomplete="off"
+							/>
+						</label>
+						<button class="button" type="submit" disabled={creatingSearch}>
+							{creatingSearch ? 'Starting search...' : 'Start search'}
+						</button>
+					</form>
 
-		{#if data.agents.length > 0}
-			<section>
-				<h2>Agent Networking</h2>
-				{#each data.agents as agent}
-					<article>
-						<h3>{agent.registration.protocol} · {agent.registration.hostname}</h3>
-						<p>{agent.registration.indexer_id}</p>
-						<p>Registered URL: {agent.registration.url}</p>
-						<p>
-							Control: {agent.report?.control.state ?? 'pending'} · ready:
-							{agent.report?.control.ready ? 'yes' : 'no'} · iface:
-							{agent.report?.control.bind_iface ?? 'none'} · bind:
-							{agent.report?.control.resolved_bind_ip ?? 'none'} · port:
-							{agent.config.control.listen_port}
-						</p>
-						<p>
-							P2P: {agent.report?.p2p.state ?? 'pending'} · ready:
-							{agent.report?.p2p.ready ? 'yes' : 'no'} · iface:
-							{agent.report?.p2p.bind_iface ?? 'none'} · bind:
-							{agent.report?.p2p.resolved_bind_ip ?? 'none'} · kad:
-							{agent.config.p2p.kad.listen_port} · ed2k: {agent.config.p2p.ed2k.listen_port}
-						</p>
-						{#if agent.last_error}
-							<p>Error: {agent.last_error}</p>
-						{/if}
-						{#if agent.publish_observability}
-							<p>
-								Last seed: {formatSeedSource(agent.publish_observability.last_seed_source)} ·
-								{formatTimestamp(agent.publish_observability.last_seed_at)}
-							</p>
-							<p>
-								Keyword publish: {formatPublishBatch(agent.publish_observability.latest_keyword_batch)}
-							</p>
-							<p>
-								Source publish: {formatPublishBatch(agent.publish_observability.latest_source_batch)}
-							</p>
-							<p>
-								Keyword totals: batches {agent.publish_observability.keyword_counters.batches} ·
-								acked {agent.publish_observability.keyword_counters.acked_contacts}/
-								{agent.publish_observability.keyword_counters.attempted_contacts} · failed
-								{agent.publish_observability.keyword_counters.failed_contacts} · timed out
-								{agent.publish_observability.keyword_counters.timed_out_contacts}
-							</p>
-							<p>
-								Source totals: batches {agent.publish_observability.source_counters.batches} ·
-								acked {agent.publish_observability.source_counters.acked_contacts}/
-								{agent.publish_observability.source_counters.attempted_contacts} · failed
-								{agent.publish_observability.source_counters.failed_contacts} · timed out
-								{agent.publish_observability.source_counters.timed_out_contacts}
-							</p>
-							{#if agent.publish_observability.log_file}
-								<p>
-									Log file: <code>{agent.publish_observability.log_file.path}</code> ·
-									rotation {agent.publish_observability.log_file.rotation} · keep
-									{agent.publish_observability.log_file.max_files} · last write
-									{formatTimestamp(agent.publish_observability.log_file.last_write_at)}
-								</p>
-							{/if}
+					<p class="hint">
+						This keeps the current coordinator flow intact: `POST /api/search`, then redirect
+						to the live SSE job page.
+					</p>
+
+					{#if searchError}
+						<p class="message message--danger">{searchError}</p>
+					{/if}
+
+					{#if data.searches.length > 0}
+						<div class="recent-list">
+							{#each data.searches as search}
+								<div class="list-row">
+									<div>
+										<div class="badge-row">
+											<StatusBadge
+												tone={search.status === 'completed' ? 'good' : search.status === 'failed' ? 'danger' : 'accent'}
+												text={search.status}
+											/>
+											<StatusBadge tone="neutral" text={`${search.result_count} results`} />
+										</div>
+										<strong>{search.query ?? search.job_id}</strong>
+										<p>Created {formatTimestamp(search.created_at)}</p>
+									</div>
+									<a class="text-link" href={`/search/${search.job_id}`}>Open live job</a>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<p class="message message--accent">No recent jobs yet. Start a search to seed the dashboard.</p>
+					{/if}
+				</div>
+			</Panel>
+
+			<Panel
+				title="Search Readiness"
+				subtitle="A quick operator read on whether the dashboard is ready to fan out active Kad work."
+			>
+				<div class="stack">
+					<p class="message {data.agents.length > 0 ? 'message--good' : 'message--warn'}">
+						{#if data.agents.length > 0}
+							At least one agent is registered. Search dispatch can proceed when a Kad agent is marked ready.
 						{:else}
-							<p>Publish observability: pending.</p>
+							No agents are registered yet. Search requests will return a readiness error until one checks in.
 						{/if}
+					</p>
 
-						<form
-							method="POST"
-							action={`/api/agents/${agent.registration.indexer_id}/interface-selection`}
-						>
-							<label>
-								Control interface
-								<select name="control_bind_iface">
-									<option value="">-- choose --</option>
-									<option value={ANY_BIND_OPTION} selected={isAnyBindingOption(agent.config.control)}>
-										Any (0.0.0.0)
-									</option>
-									{#each agent.report?.interfaces ?? [] as iface}
-										<option value={iface.name} selected={iface.name === agent.config.control.bind_iface}>
-											{iface.name}
-											{#if iface.is_vpn_candidate} (vpn){/if}
-											{#if iface.has_default_route} (default-route){/if}
-										</option>
-									{/each}
-								</select>
-							</label>
+					<dl class="meta-list">
+						<div class="meta-row">
+							<dt>Ready agents</dt>
+							<dd>
+								<strong>
+									{data.agents.filter((agent) => agent.report?.control.ready && agent.report?.p2p.ready).length}
+								</strong>
+							</dd>
+						</div>
+						<div class="meta-row">
+							<dt>Harvested snoops</dt>
+							<dd><strong>{snoops.length}</strong></dd>
+						</div>
+						<div class="meta-row">
+							<dt>Recent jobs shown</dt>
+							<dd><strong>{data.searches.length}</strong></dd>
+						</div>
+					</dl>
+				</div>
+			</Panel>
+		</section>
 
-							<label>
-								Control bind IP
-								<input name="control_bind_ip" value={agent.config.control.bind_ip ?? ''} />
-							</label>
+		<Panel
+			title="Harvested Kad Queries"
+			subtitle="Auto-refreshes every 10 seconds from the persisted snoop queue so you can see what the network is asking for."
+		>
+			{#if snoops.length > 0}
+				<div class="table-shell">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>Seen</th>
+								<th>Family</th>
+								<th>Target</th>
+								<th>Details</th>
+								<th>Hits</th>
+								<th>Drained</th>
+								<th>Agent</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each snoops as snoop}
+								<tr>
+									<td>{formatTimestamp(snoop.last_seen)}</td>
+									<td><StatusBadge tone="neutral" text={snoop.family} /></td>
+									<td><code class="dense-code">{snoop.target}</code></td>
+									<td>{formatSnoopDetails(snoop)}</td>
+									<td>{snoop.hit_count}</td>
+									<td>{formatTimestamp(snoop.last_drained_at)}</td>
+									<td>
+										<div class="badge-row">
+											<StatusBadge tone="accent" text={snoop.hostname ?? snoop.protocol ?? 'agent'} />
+										</div>
+										<div class="muted mono">{shortIndexerId(snoop.indexer_id)}</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{:else}
+				<p class="message message--accent">
+					No harvested Kad queries yet. Once agents snoop network demand, this table will populate automatically.
+				</p>
+			{/if}
+		</Panel>
 
-							<label>
-								Control listen port
-								<input name="control_listen_port" value={agent.config.control.listen_port} />
-							</label>
+		<Panel
+			title="Agent Networking"
+			subtitle="Per-agent readiness, interface selection, NAT posture, and publish observability in one place."
+		>
+			<div class="stack" id="agent-networking">
+				{#if data.agents.length > 0}
+					<div class="agent-grid">
+						{#each data.agents as agent}
+							<article class="agent-card">
+								<div class="agent-card__header">
+									<div>
+										<div class="agent-card__title-row">
+											<strong class="agent-card__title">
+												{agent.registration.protocol} · {agent.registration.hostname}
+											</strong>
+											<StatusBadge tone={agentTone(agent)} text={agentStatus(agent)} />
+											<StatusBadge
+												tone={publishTone(agent.publish_observability)}
+												text={agent.publish_observability ? 'publish telemetry' : 'telemetry pending'}
+											/>
+										</div>
+										<p>Registered URL {agent.registration.url}</p>
+										<p class="mono">{agent.registration.indexer_id}</p>
+									</div>
+									<div class="badge-row">
+										<StatusBadge
+											tone={selectionTone(agent.report?.control.state, agent.report?.control.ready)}
+											text={`control ${agent.report?.control.state ?? 'pending'}`}
+										/>
+										<StatusBadge
+											tone={selectionTone(agent.report?.p2p.state, agent.report?.p2p.ready)}
+											text={`p2p ${agent.report?.p2p.state ?? 'pending'}`}
+										/>
+										<StatusBadge tone={natTone(agent)} text={`nat ${natStatus(agent)}`} />
+									</div>
+								</div>
 
-							<label>
-								<input
-									type="checkbox"
-									name="control_selection_confirmed"
-									checked={agent.config.control.selection_confirmed}
-								/>
-								Control selection confirmed
-							</label>
+								<div class="subgrid">
+									<section class="subpanel">
+										<h4>Control</h4>
+										<dl class="kv-list">
+											<div class="kv-row">
+												<dt>Binding</dt>
+												<dd>{summarizeBinding(agent.report?.control ?? null, 'control')}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Port</dt>
+												<dd>{agent.config.control.listen_port}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Confirmed</dt>
+												<dd>{agent.config.control.selection_confirmed ? 'yes' : 'no'}</dd>
+											</div>
+										</dl>
+									</section>
 
-							<label>
-								P2P interface
-								<select name="p2p_bind_iface">
-									<option value="">-- choose --</option>
-									<option value={ANY_BIND_OPTION} selected={isAnyBindingOption(agent.config.p2p)}>
-										Any (0.0.0.0)
-									</option>
-									{#each agent.report?.interfaces ?? [] as iface}
-										<option value={iface.name} selected={iface.name === agent.config.p2p.bind_iface}>
-											{iface.name}
-											{#if iface.is_vpn_candidate} (vpn){/if}
-											{#if iface.has_default_route} (default-route){/if}
-										</option>
-									{/each}
-								</select>
-							</label>
+									<section class="subpanel">
+										<h4>P2P</h4>
+										<dl class="kv-list">
+											<div class="kv-row">
+												<dt>Binding</dt>
+												<dd>{summarizeBinding(agent.report?.p2p ?? null, 'p2p')}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Kad / eD2k</dt>
+												<dd>{agent.config.p2p.kad.listen_port} / {agent.config.p2p.ed2k.listen_port}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Confirmed</dt>
+												<dd>{agent.config.p2p.selection_confirmed ? 'yes' : 'no'}</dd>
+											</div>
+										</dl>
+									</section>
 
-							<label>
-								P2P bind IP
-								<input name="p2p_bind_ip" value={agent.config.p2p.bind_ip ?? ''} />
-							</label>
+									<section class="subpanel">
+										<h4>NAT</h4>
+										<dl class="kv-list">
+											<div class="kv-row">
+												<dt>Backend</dt>
+												<dd>{desiredNatBackend(agent)}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Gateway</dt>
+												<dd>{agent.nat?.gateway?.gateway_ip ?? 'none'}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>External IP</dt>
+												<dd>{summarizeExternalAddress(agent)}</dd>
+											</div>
+										</dl>
+									</section>
+								</div>
 
-							<label>
-								Kad listen port
-								<input name="p2p_kad_listen_port" value={agent.config.p2p.kad.listen_port} />
-							</label>
+								{#if agent.last_error}
+									<p class="message message--danger">{agent.last_error}</p>
+								{/if}
 
-							<label>
-								eD2k listen port
-								<input name="p2p_ed2k_listen_port" value={agent.config.p2p.ed2k.listen_port} />
-							</label>
+								<section class="subpanel">
+									<div class="page-header">
+										<div>
+											<h4>Publish observability</h4>
+											<p>Latest seed source, batch outcomes, and persistent log status.</p>
+										</div>
+										<StatusBadge
+											tone={publishTone(agent.publish_observability)}
+											text={formatSeedSource(agent.publish_observability?.last_seed_source ?? null)}
+										/>
+									</div>
 
-							<label>
-								<input
-									type="checkbox"
-									name="p2p_selection_confirmed"
-									checked={agent.config.p2p.selection_confirmed}
-								/>
-								P2P selection confirmed
-							</label>
+									{#if agent.publish_observability}
+										<div class="metrics-grid">
+											<section class="subpanel">
+												<h4>Latest batch</h4>
+												<dl class="kv-list">
+													<div class="kv-row">
+														<dt>Last seed</dt>
+														<dd>{formatTimestamp(agent.publish_observability.last_seed_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Keyword publish</dt>
+														<dd>{formatPublishBatch(agent.publish_observability.latest_keyword_batch)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Source publish</dt>
+														<dd>{formatPublishBatch(agent.publish_observability.latest_source_batch)}</dd>
+													</div>
+												</dl>
+											</section>
 
-							<p>
-								NAT desired: {agent.config.nat.p2p.enabled ? 'enabled' : 'disabled'} · backend:
-								{desiredNatBackend(agent)} · IGD:
-								{agent.config.nat.p2p.igd_ip ?? 'auto'} · minissdpd:
-								{agent.config.nat.p2p.minissdpd_socket ?? 'off'} · SSDP port:
-								{agent.config.nat.p2p.ssdp_local_port ?? 'auto'} · external IP:
-								{agent.config.nat.p2p.external_ip_override ?? 'auto'}
-							</p>
-							<p>
-								NAT live: {agent.nat?.enabled ? 'enabled' : 'disabled'} · backend:
-								{agent.nat?.backend ?? 'none'} · gateway:
-								{agent.nat?.gateway?.gateway_ip ?? 'none'} · minissdpd:
-								{agent.nat?.minissdpd_socket ?? 'off'} · SSDP port:
-								{agent.nat?.ssdp_local_port ?? 'auto'} · external IP:
-								{agent.nat?.gateway?.external_ip ??
-									agent.nat?.observed_external_addresses?.[0] ??
-									'none'}
-							</p>
-							{#if agent.nat?.last_error}
-								<p>NAT error: {agent.nat.last_error}</p>
-							{/if}
+											<section class="subpanel">
+												<h4>Counters</h4>
+												<dl class="kv-list">
+													<div class="kv-row">
+														<dt>Keyword totals</dt>
+														<dd>
+															{agent.publish_observability.keyword_counters.batches} batches ·
+															{agent.publish_observability.keyword_counters.acked_contacts}/
+															{agent.publish_observability.keyword_counters.attempted_contacts} acked
+														</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Source totals</dt>
+														<dd>
+															{agent.publish_observability.source_counters.batches} batches ·
+															{agent.publish_observability.source_counters.acked_contacts}/
+															{agent.publish_observability.source_counters.attempted_contacts} acked
+														</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Log file</dt>
+														<dd>
+															{#if agent.publish_observability.log_file}
+																<span class="mono">{agent.publish_observability.log_file.path}</span>
+															{:else}
+																pending
+															{/if}
+														</dd>
+													</div>
+												</dl>
+											</section>
+										</div>
+									{:else}
+										<p class="message message--accent">
+											Publish observability is still pending from this agent.
+										</p>
+									{/if}
+								</section>
 
-							<label>
-								<input
-									type="checkbox"
-									name="nat_p2p_enabled"
-									checked={agent.config.nat.p2p.enabled}
-								/>
-								Enable UPnP/NAT for P2P
-							</label>
+								<form
+									class="agent-form"
+									method="POST"
+									action={`/api/agents/${agent.registration.indexer_id}/interface-selection`}
+								>
+									<section class="form-section">
+										<h4>Control interface</h4>
+										<div class="form-grid">
+											<label class="field">
+												<span>Control interface</span>
+												<select class="select" name="control_bind_iface">
+													<option value="">-- choose --</option>
+													<option
+														value={ANY_BIND_OPTION}
+														selected={isAnyBindingOption(agent.config.control as InterfaceBindingSelection)}
+													>
+														Any (0.0.0.0)
+													</option>
+													{#each agent.report?.interfaces ?? [] as iface}
+														<option
+															value={iface.name}
+															selected={iface.name === agent.config.control.bind_iface}
+														>
+															{iface.name}
+															{#if iface.is_vpn_candidate} (vpn){/if}
+															{#if iface.has_default_route} (default-route){/if}
+														</option>
+													{/each}
+												</select>
+											</label>
 
-							<label>
-								NAT backend
-								<select name="nat_p2p_backend">
-									<option
-										value="upnp_miniupnpc"
-										selected={desiredNatBackend(agent) === 'upnp_miniupnpc'}
-									>
-										upnp_miniupnpc
-									</option>
-									<option value="upnp_rupnp" selected={desiredNatBackend(agent) === 'upnp_rupnp'}>
-										upnp_rupnp
-									</option>
-									<option value="upnp_igd" selected={desiredNatBackend(agent) === 'upnp_igd'}>
-										upnp_igd
-									</option>
-								</select>
-							</label>
+											<label class="field">
+												<span>Control bind IP</span>
+												<input
+													class="input"
+													name="control_bind_ip"
+													value={agent.config.control.bind_ip ?? ''}
+												/>
+											</label>
 
-							<label>
-								IGD IP override
-								<input name="nat_p2p_igd_ip" value={agent.config.nat.p2p.igd_ip ?? ''} />
-							</label>
+											<label class="field">
+												<span>Control listen port</span>
+												<input
+													class="input"
+													name="control_listen_port"
+													value={agent.config.control.listen_port}
+												/>
+											</label>
+										</div>
 
-							<label>
-								MiniSSDPd socket
-								<input
-									name="nat_p2p_minissdpd_socket"
-									value={agent.config.nat.p2p.minissdpd_socket ?? ''}
-								/>
-							</label>
+										<label class="checkbox-field">
+											<input
+												type="checkbox"
+												name="control_selection_confirmed"
+												checked={agent.config.control.selection_confirmed}
+											/>
+											<span>Control selection confirmed</span>
+										</label>
+									</section>
 
-							<label>
-								SSDP local port
-								<input
-									name="nat_p2p_ssdp_local_port"
-									value={agent.config.nat.p2p.ssdp_local_port ?? ''}
-								/>
-							</label>
+									<section class="form-section">
+										<h4>P2P interface</h4>
+										<div class="form-grid">
+											<label class="field">
+												<span>P2P interface</span>
+												<select class="select" name="p2p_bind_iface">
+													<option value="">-- choose --</option>
+													<option
+														value={ANY_BIND_OPTION}
+														selected={isAnyBindingOption(agent.config.p2p as InterfaceBindingSelection)}
+													>
+														Any (0.0.0.0)
+													</option>
+													{#each agent.report?.interfaces ?? [] as iface}
+														<option
+															value={iface.name}
+															selected={iface.name === agent.config.p2p.bind_iface}
+														>
+															{iface.name}
+															{#if iface.is_vpn_candidate} (vpn){/if}
+															{#if iface.has_default_route} (default-route){/if}
+														</option>
+													{/each}
+												</select>
+											</label>
 
-							<label>
-								Discovery timeout
-								<input
-									name="nat_p2p_discovery_timeout_secs"
-									value={agent.config.nat.p2p.discovery_timeout_secs}
-								/>
-							</label>
+											<label class="field">
+												<span>P2P bind IP</span>
+												<input class="input" name="p2p_bind_ip" value={agent.config.p2p.bind_ip ?? ''} />
+											</label>
 
-							<label>
-								Lease duration
-								<input
-									name="nat_p2p_lease_duration_secs"
-									value={agent.config.nat.p2p.lease_duration_secs}
-								/>
-							</label>
+											<label class="field">
+												<span>Kad listen port</span>
+												<input
+													class="input"
+													name="p2p_kad_listen_port"
+													value={agent.config.p2p.kad.listen_port}
+												/>
+											</label>
 
-							<label>
-								Renew margin
-								<input
-									name="nat_p2p_renew_margin_secs"
-									value={agent.config.nat.p2p.renew_margin_secs}
-								/>
-							</label>
+											<label class="field">
+												<span>eD2k listen port</span>
+												<input
+													class="input"
+													name="p2p_ed2k_listen_port"
+													value={agent.config.p2p.ed2k.listen_port}
+												/>
+											</label>
+										</div>
 
-							<label>
-								External IP override
-								<input
-									name="nat_p2p_external_ip_override"
-									value={agent.config.nat.p2p.external_ip_override ?? ''}
-								/>
-							</label>
+										<label class="checkbox-field">
+											<input
+												type="checkbox"
+												name="p2p_selection_confirmed"
+												checked={agent.config.p2p.selection_confirmed}
+											/>
+											<span>P2P selection confirmed</span>
+										</label>
+									</section>
 
-							<button type="submit">Apply</button>
-						</form>
-					</article>
-				{/each}
-			</section>
-		{/if}
+									<section class="form-section">
+										<h4>NAT for P2P</h4>
+										<div class="form-grid">
+											<label class="field">
+												<span>NAT backend</span>
+												<select class="select" name="nat_p2p_backend">
+													<option
+														value="upnp_miniupnpc"
+														selected={desiredNatBackend(agent) === 'upnp_miniupnpc'}
+													>
+														upnp_miniupnpc
+													</option>
+													<option
+														value="upnp_rupnp"
+														selected={desiredNatBackend(agent) === 'upnp_rupnp'}
+													>
+														upnp_rupnp
+													</option>
+													<option
+														value="upnp_igd"
+														selected={desiredNatBackend(agent) === 'upnp_igd'}
+													>
+														upnp_igd
+													</option>
+												</select>
+											</label>
+
+											<label class="field">
+												<span>IGD IP override</span>
+												<input class="input" name="nat_p2p_igd_ip" value={agent.config.nat.p2p.igd_ip ?? ''} />
+											</label>
+
+											<label class="field">
+												<span>MiniSSDPd socket</span>
+												<input
+													class="input"
+													name="nat_p2p_minissdpd_socket"
+													value={agent.config.nat.p2p.minissdpd_socket ?? ''}
+												/>
+											</label>
+
+											<label class="field">
+												<span>SSDP local port</span>
+												<input
+													class="input"
+													name="nat_p2p_ssdp_local_port"
+													value={agent.config.nat.p2p.ssdp_local_port ?? ''}
+												/>
+											</label>
+
+											<label class="field">
+												<span>Discovery timeout</span>
+												<input
+													class="input"
+													name="nat_p2p_discovery_timeout_secs"
+													value={agent.config.nat.p2p.discovery_timeout_secs}
+												/>
+											</label>
+
+											<label class="field">
+												<span>Lease duration</span>
+												<input
+													class="input"
+													name="nat_p2p_lease_duration_secs"
+													value={agent.config.nat.p2p.lease_duration_secs}
+												/>
+											</label>
+
+											<label class="field">
+												<span>Renew margin</span>
+												<input
+													class="input"
+													name="nat_p2p_renew_margin_secs"
+													value={agent.config.nat.p2p.renew_margin_secs}
+												/>
+											</label>
+
+											<label class="field">
+												<span>External IP override</span>
+												<input
+													class="input"
+													name="nat_p2p_external_ip_override"
+													value={agent.config.nat.p2p.external_ip_override ?? ''}
+												/>
+											</label>
+										</div>
+
+										<label class="checkbox-field">
+											<input
+												type="checkbox"
+												name="nat_p2p_enabled"
+												checked={agent.config.nat.p2p.enabled}
+											/>
+											<span>Enable UPnP or NAT traversal for P2P</span>
+										</label>
+									</section>
+
+									<div class="form-actions">
+										<button class="button" type="submit">Apply networking config</button>
+									</div>
+								</form>
+							</article>
+						{/each}
+					</div>
+				{:else}
+					<p class="message message--warn">
+						No agent registrations yet. Once an agent registers, its networking form and live status will appear here.
+					</p>
+				{/if}
+			</div>
+		</Panel>
 	{/if}
 </main>
