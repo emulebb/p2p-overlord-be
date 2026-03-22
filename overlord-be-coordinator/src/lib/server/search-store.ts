@@ -4,6 +4,8 @@ import { getDb } from '$lib/server/db';
 import { publishSearchStream } from '$lib/server/search-events';
 import type {
 	FileRecord,
+	HarvestReplayContext,
+	HarvestReplayRecord,
 	HashType,
 	ResultBatch,
 	SearchDispatchStatus,
@@ -315,6 +317,81 @@ async function upsertFile(
 	return fileId;
 }
 
+async function ensureHarvestReplay(
+	tx: Prisma.TransactionClient,
+	indexerId: string,
+	context: HarvestReplayContext
+): Promise<void> {
+	const placeholderTimestamp = new Date();
+	await tx.harvestReplay.upsert({
+		where: {
+			id: context.replay_id
+		},
+		create: {
+			id: context.replay_id,
+			indexerId,
+			family: context.family,
+			logicalKey: context.logical_key,
+			target: context.target,
+			startPosition: context.start_position,
+			size: context.size === null ? null : BigInt(context.size),
+			restrictivePayloadHex: context.restrictive_payload_hex,
+			startedAt: placeholderTimestamp,
+			completedAt: placeholderTimestamp,
+			resultCount: 0,
+			batchCount: 0,
+			error: null
+		},
+		update: {
+			indexerId,
+			family: context.family,
+			logicalKey: context.logical_key,
+			target: context.target,
+			startPosition: context.start_position,
+			size: context.size === null ? null : BigInt(context.size),
+			restrictivePayloadHex: context.restrictive_payload_hex
+		}
+	});
+}
+
+export async function storeHarvestReplay(record: HarvestReplayRecord): Promise<void> {
+	const db = getDb();
+	await db.harvestReplay.upsert({
+		where: {
+			id: record.replay_id
+		},
+		create: {
+			id: record.replay_id,
+			indexerId: record.indexer_id,
+			family: record.family,
+			logicalKey: record.logical_key,
+			target: record.target,
+			startPosition: record.start_position,
+			size: record.size === null ? null : BigInt(record.size),
+			restrictivePayloadHex: record.restrictive_payload_hex,
+			startedAt: new Date(record.started_at),
+			completedAt: new Date(record.completed_at),
+			resultCount: record.result_count,
+			batchCount: record.batch_count,
+			error: record.error
+		},
+		update: {
+			indexerId: record.indexer_id,
+			family: record.family,
+			logicalKey: record.logical_key,
+			target: record.target,
+			startPosition: record.start_position,
+			size: record.size === null ? null : BigInt(record.size),
+			restrictivePayloadHex: record.restrictive_payload_hex,
+			startedAt: new Date(record.started_at),
+			completedAt: new Date(record.completed_at),
+			resultCount: record.result_count,
+			batchCount: record.batch_count,
+			error: record.error
+		}
+	});
+}
+
 export async function createSearchJob(job: SearchJob, indexerIds: string[]): Promise<void> {
 	const db = getDb();
 	await db.searchJob.create({
@@ -382,9 +459,29 @@ export async function markSearchDispatchFailed(
 export async function ingestResultBatch(batch: ResultBatch): Promise<void> {
 	const db = getDb();
 	const jobId = batch.job_id;
+	const harvestContext = batch.harvest_context ?? null;
 	const snapshot = await db.$transaction(async (tx) => {
+		if (harvestContext) {
+			await ensureHarvestReplay(tx, batch.indexer_id, harvestContext);
+		}
+
 		for (const file of batch.files) {
 			const fileId = await upsertFile(tx, file);
+			if (fileId !== null && harvestContext) {
+				await tx.harvestReplayFile.upsert({
+					where: {
+						replayId_fileId: {
+							replayId: harvestContext.replay_id,
+							fileId
+						}
+					},
+					create: {
+						replayId: harvestContext.replay_id,
+						fileId
+					},
+					update: {}
+				});
+			}
 			if (fileId === null || jobId === null) {
 				continue;
 			}

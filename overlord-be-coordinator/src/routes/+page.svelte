@@ -6,7 +6,9 @@
 		KadHarvestObservability,
 		KadPublishObservability,
 		SearchJobStatusView,
-		SnoopDashboardEntry
+		SnoopDemandHoleEntry,
+		SnoopDashboardEntry,
+		SnoopTrendEntry
 	} from '$lib/shared/internal-api';
 	import { onMount } from 'svelte';
 
@@ -16,6 +18,7 @@
 	import {
 		desiredNatBackend,
 		formatHarvestFamily,
+		formatDemandDetails,
 		formatPassiveReplay,
 		formatPublishBatch,
 		formatSeedSource,
@@ -45,6 +48,8 @@
 				agents: AgentInterfacesView[];
 				searches: SearchJobStatusView[];
 				snoops: SnoopDashboardEntry[];
+				trending: SnoopTrendEntry[];
+				holes: SnoopDemandHoleEntry[];
 		  }
 		| undefined;
 
@@ -52,8 +57,12 @@
 	let searchError = '';
 	let creatingSearch = false;
 	let snoops: SnoopDashboardEntry[] = [];
+	let trending: SnoopTrendEntry[] = [];
+	let holes: SnoopDemandHoleEntry[] = [];
 
 	$: snoops = data?.snoops ?? [];
+	$: trending = data?.trending ?? [];
+	$: holes = data?.holes ?? [];
 
 	async function startSearch() {
 		const trimmed = query.trim();
@@ -198,9 +207,15 @@
 					return;
 				}
 
-				const payload = (await response.json()) as { entries: SnoopDashboardEntry[] };
+				const payload = (await response.json()) as {
+					entries: SnoopDashboardEntry[];
+					trending: SnoopTrendEntry[];
+					holes: SnoopDemandHoleEntry[];
+				};
 				if (!cancelled) {
 					snoops = payload.entries;
+					trending = payload.trending;
+					holes = payload.holes;
 				}
 			} catch {
 				// Keep the dashboard usable when background refreshes fail.
@@ -352,6 +367,14 @@
 							<dt>Recent jobs shown</dt>
 							<dd><strong>{data.searches.length}</strong></dd>
 						</div>
+						<div class="meta-row">
+							<dt>Trending shapes</dt>
+							<dd><strong>{trending.length}</strong></dd>
+						</div>
+						<div class="meta-row">
+							<dt>Demand holes</dt>
+							<dd><strong>{holes.length}</strong></dd>
+						</div>
 					</dl>
 				</div>
 			</Panel>
@@ -401,6 +424,88 @@
 				</p>
 			{/if}
 		</Panel>
+
+		<section class="split-grid">
+			<Panel
+				title="Trending Kad Demand"
+				subtitle="Append-only harvested observations over the last 24 hours, ranked by repeated request shape."
+			>
+				{#if trending.length > 0}
+					<div class="table-shell">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Last Seen</th>
+									<th>Family</th>
+									<th>Target</th>
+									<th>Details</th>
+									<th>Observations</th>
+									<th>Replays</th>
+									<th>Resolved</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each trending as entry}
+									<tr>
+										<td>{formatTimestamp(entry.last_seen)}</td>
+										<td><StatusBadge tone="neutral" text={entry.family} /></td>
+										<td><code class="dense-code">{entry.target}</code></td>
+										<td>{formatDemandDetails(entry)}</td>
+										<td>{entry.observed_count}</td>
+										<td>{entry.replay_count}</td>
+										<td>{entry.sample_name ?? `${entry.resolved_file_count} files`}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{:else}
+					<p class="message message--accent">
+						No append-only demand trends yet. Once the snoop log fills, this view will rank the hottest shapes.
+					</p>
+				{/if}
+			</Panel>
+
+			<Panel
+				title="Demand Holes"
+				subtitle="Harvested shapes that are being replayed but still have not yielded any linked files."
+			>
+				{#if holes.length > 0}
+					<div class="table-shell">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Last Seen</th>
+									<th>Family</th>
+									<th>Target</th>
+									<th>Details</th>
+									<th>Replays</th>
+									<th>Last Replay</th>
+									<th>Last Error</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each holes as entry}
+									<tr>
+										<td>{formatTimestamp(entry.last_seen)}</td>
+										<td><StatusBadge tone="warn" text={entry.family} /></td>
+										<td><code class="dense-code">{entry.target}</code></td>
+										<td>{formatDemandDetails(entry)}</td>
+										<td>{entry.replay_count}</td>
+										<td>{formatTimestamp(entry.last_replay_at)}</td>
+										<td>{entry.last_error ?? 'None'}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{:else}
+					<p class="message message--good">
+						No current demand holes. Replayed harvested shapes are either unresolved and not yet retried, or already linked to files.
+					</p>
+				{/if}
+			</Panel>
+		</section>
 
 		<Panel
 			title="Agent Networking"

@@ -7,7 +7,9 @@ import type {
 	KadPassiveReplayObservability,
 	KadPublishObservability,
 	PublishBatchSummary,
-	SnoopDashboardEntry
+	SnoopDemandHoleEntry,
+	SnoopDashboardEntry,
+	SnoopTrendEntry
 } from '$lib/shared/internal-api';
 
 const ANY_BIND_IP = '0.0.0.0';
@@ -74,6 +76,19 @@ export function formatSnoopDetails(entry: SnoopDashboardEntry): string {
 				: `start=${entry.start_position}`;
 		case 'source':
 			return `start=${entry.start_position} size=${formatBytes(entry.size)}`;
+		case 'notes':
+			return `size=${formatBytes(entry.size)}`;
+	}
+}
+
+export function formatDemandDetails(entry: SnoopTrendEntry | SnoopDemandHoleEntry): string {
+	switch (entry.family) {
+		case 'keyword':
+			return entry.restrictive_payload_hex
+				? `start=${entry.start_position ?? 0} restrictive=${entry.restrictive_payload_hex}`
+				: `start=${entry.start_position ?? 0}`;
+		case 'source':
+			return `start=${entry.start_position ?? 0} size=${formatBytes(entry.size)}`;
 		case 'notes':
 			return `size=${formatBytes(entry.size)}`;
 	}

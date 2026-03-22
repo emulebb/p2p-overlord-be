@@ -117,7 +117,39 @@ export type ResultBatch = {
 	job_id: string | null;
 	indexer_id: string;
 	protocol: Protocol;
+	harvest_context?: HarvestReplayContext | null;
 	files: FileRecord[];
+};
+
+export type HarvestFamily = 'keyword' | 'source' | 'notes';
+
+export type HarvestReplayContext = {
+	replay_id: string;
+	family: HarvestFamily;
+	logical_key: string;
+	target: string;
+	start_position: number | null;
+	size: number | null;
+	restrictive_payload_hex: string | null;
+};
+
+export type HarvestReplayRecord = HarvestReplayContext & {
+	indexer_id: string;
+	started_at: string;
+	completed_at: string;
+	result_count: number;
+	batch_count: number;
+	error: string | null;
+};
+
+export type SnoopObservation = {
+	family: HarvestFamily;
+	logical_key: string;
+	target: string;
+	start_position: number | null;
+	size: number | null;
+	restrictive_payload_hex: string | null;
+	observed_at: string;
 };
 
 export type InterfaceAddressFamily = 'ipv4' | 'ipv6';
@@ -389,6 +421,28 @@ export type SnoopDashboardEntry = SnoopEntry & {
 	indexer_id: string;
 	hostname: string | null;
 	protocol: Protocol | null;
+};
+
+export type SnoopDemandEntry = {
+	family: HarvestFamily;
+	logical_key: string;
+	target: string;
+	start_position: number | null;
+	size: number | null;
+	restrictive_payload_hex: string | null;
+	observed_count: number;
+	last_seen: string;
+	replay_count: number;
+	last_replay_at: string | null;
+};
+
+export type SnoopTrendEntry = SnoopDemandEntry & {
+	resolved_file_count: number;
+	sample_name: string | null;
+};
+
+export type SnoopDemandHoleEntry = SnoopDemandEntry & {
+	last_error: string | null;
 };
 
 export type PopularHash = {

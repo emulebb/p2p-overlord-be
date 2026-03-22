@@ -92,11 +92,46 @@ CREATE TABLE snoop_entries (
 
 CREATE TABLE snoop_log (
     id BIGSERIAL PRIMARY KEY,
-    query TEXT NOT NULL,
-    hash JSONB NULL,
-    hit_count INTEGER NOT NULL,
-    seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    indexer_id TEXT NOT NULL,
+    family TEXT NOT NULL,
+    logical_key TEXT NOT NULL,
+    target TEXT NOT NULL,
+    start_position INTEGER NULL,
+    size BIGINT NULL,
+    restrictive_payload_hex TEXT NULL,
+    observed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX snoop_log_observed_at_idx ON snoop_log(observed_at);
+CREATE INDEX snoop_log_family_logical_key_observed_at_idx
+    ON snoop_log(family, logical_key, observed_at);
+
+CREATE TABLE harvest_replays (
+    id TEXT PRIMARY KEY,
+    indexer_id TEXT NOT NULL,
+    family TEXT NOT NULL,
+    logical_key TEXT NOT NULL,
+    target TEXT NOT NULL,
+    start_position INTEGER NULL,
+    size BIGINT NULL,
+    restrictive_payload_hex TEXT NULL,
+    started_at TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ NOT NULL,
+    result_count INTEGER NOT NULL DEFAULT 0,
+    batch_count INTEGER NOT NULL DEFAULT 0,
+    error TEXT NULL
+);
+
+CREATE INDEX harvest_replays_family_logical_key_idx ON harvest_replays(family, logical_key);
+CREATE INDEX harvest_replays_completed_at_idx ON harvest_replays(completed_at);
+
+CREATE TABLE harvest_replay_files (
+    replay_id TEXT NOT NULL REFERENCES harvest_replays(id) ON DELETE CASCADE,
+    file_id BIGINT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+    PRIMARY KEY (replay_id, file_id)
+);
+
+CREATE INDEX harvest_replay_files_file_id_idx ON harvest_replay_files(file_id);
 
 CREATE TABLE stats_samples (
     id BIGSERIAL PRIMARY KEY,

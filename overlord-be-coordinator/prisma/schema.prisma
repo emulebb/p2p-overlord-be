@@ -7,15 +7,16 @@ datasource db {
 }
 
 model File {
-  id          BigInt   @id @default(autoincrement())
-  size        BigInt?
-  firstSeen   DateTime @default(now())
-  lastSeen    DateTime @default(now())
-  names       FileName[]
-  hashes      FileHash[]
-  tags        FileTag[]
-  sources     Source[]
-  searchLinks SearchResult[]
+  id                 BigInt              @id @default(autoincrement())
+  size               BigInt?
+  firstSeen          DateTime            @default(now())
+  lastSeen           DateTime            @default(now())
+  names              FileName[]
+  hashes             FileHash[]
+  tags               FileTag[]
+  sources            Source[]
+  searchLinks        SearchResult[]
+  harvestReplayLinks HarvestReplayFile[]
 }
 
 model FileHash {
@@ -118,11 +119,48 @@ model SnoopEntry {
 }
 
 model SnoopLog {
-  id        BigInt   @id @default(autoincrement())
-  query     String
-  hash      Json?
-  hitCount  Int
-  seenAt    DateTime @default(now())
+  id                    BigInt   @id @default(autoincrement())
+  indexerId             String
+  family                String
+  logicalKey            String
+  target                String
+  startPosition         Int?
+  size                  BigInt?
+  restrictivePayloadHex String?
+  observedAt            DateTime @default(now())
+
+  @@index([observedAt])
+  @@index([family, logicalKey, observedAt])
+}
+
+model HarvestReplay {
+  id                    String              @id
+  indexerId             String
+  family                String
+  logicalKey            String
+  target                String
+  startPosition         Int?
+  size                  BigInt?
+  restrictivePayloadHex String?
+  startedAt             DateTime
+  completedAt           DateTime
+  resultCount           Int                 @default(0)
+  batchCount            Int                 @default(0)
+  error                 String?
+  files                 HarvestReplayFile[]
+
+  @@index([family, logicalKey])
+  @@index([completedAt])
+}
+
+model HarvestReplayFile {
+  replayId String
+  fileId   BigInt
+  replay   HarvestReplay @relation(fields: [replayId], references: [id], onDelete: Cascade)
+  file     File          @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([replayId, fileId])
+  @@index([fileId])
 }
 
 model StatsSample {
