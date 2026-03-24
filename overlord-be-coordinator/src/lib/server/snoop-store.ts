@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 import { getDb } from '$lib/server/db';
 import type {
 	SnoopDashboardEntry,
@@ -11,6 +13,7 @@ type PersistedSnoopEntry = {
 	family: string;
 	logicalKey: string;
 	target: string;
+	requestShape: Prisma.JsonValue | null;
 	startPosition: number | null;
 	size: bigint | null;
 	restrictivePayloadHex: string | null;
@@ -43,19 +46,126 @@ type ReplaySummary = {
 	last_error: string | null;
 };
 
+type PersistedRequestShape =
+	| {
+			family: 'keyword';
+			target: string;
+			start_position: number;
+			restrictive_payload_hex: string | null;
+	  }
+	| {
+			family: 'source';
+			target: string;
+			start_position: number;
+			size: number;
+	  }
+	| {
+			family: 'notes';
+			target: string;
+			size: number;
+	  };
+
 function bigintToNumber(value: bigint | null): number | null {
 	return value === null ? null : Number(value);
 }
 
+function parsePersistedRequestShape(value: Prisma.JsonValue | null): PersistedRequestShape | null {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return null;
+	}
+
+	const record = value as Prisma.JsonObject;
+	const family = record.family;
+	const target = record.target;
+	if (typeof family !== 'string' || typeof target !== 'string') {
+		return null;
+	}
+
+	switch (family) {
+		case 'keyword': {
+			const startPosition = record.start_position;
+			const restrictivePayloadHex = record.restrictive_payload_hex;
+			if (typeof startPosition !== 'number') {
+				return null;
+			}
+			return {
+				family,
+				target,
+				start_position: startPosition,
+				restrictive_payload_hex:
+					typeof restrictivePayloadHex === 'string' ? restrictivePayloadHex : null
+			};
+		}
+		case 'source': {
+			const startPosition = record.start_position;
+			const size = record.size;
+			if (typeof startPosition !== 'number' || typeof size !== 'number') {
+				return null;
+			}
+			return {
+				family,
+				target,
+				start_position: startPosition,
+				size
+			};
+		}
+		case 'notes': {
+			const size = record.size;
+			if (typeof size !== 'number') {
+				return null;
+			}
+			return {
+				family,
+				target,
+				size
+			};
+		}
+		default:
+			return null;
+	}
+}
+
+function buildRequestShape(entry: SnoopEntry | SnoopObservation): Prisma.InputJsonValue {
+	switch (entry.family) {
+		case 'keyword':
+			return {
+				family: 'keyword',
+				target: entry.target,
+				start_position: entry.start_position,
+				restrictive_payload_hex: entry.restrictive_payload_hex
+			};
+		case 'source':
+			return {
+				family: 'source',
+				target: entry.target,
+				start_position: entry.start_position,
+				size: entry.size
+			};
+		case 'notes':
+			return {
+				family: 'notes',
+				target: entry.target,
+				size: entry.size
+			};
+	}
+}
+
 function toSnoopEntry(entry: PersistedSnoopEntry): SnoopEntry {
+	const requestShape = parsePersistedRequestShape(entry.requestShape);
 	switch (entry.family) {
 		case 'keyword':
 			return {
 				family: 'keyword',
 				logical_key: entry.logicalKey,
-				target: entry.target,
-				start_position: entry.startPosition ?? 0,
-				restrictive_payload_hex: entry.restrictivePayloadHex,
+				target: requestShape?.family === 'keyword' ? requestShape.target : entry.target,
+				start_position:
+					requestShape?.family === 'keyword'
+						? requestShape.start_position
+						: (entry.startPosition ?? 0),
+				restrictive_payload_hex:
+					requestShape?.family === 'keyword'
+						? requestShape.restrictive_payload_hex
+						: entry.restrictivePayloadHex,
 				hit_count: entry.hitCount,
 				first_seen: entry.firstSeen.toISOString(),
 				last_seen: entry.lastSeen.toISOString(),
@@ -65,9 +175,15 @@ function toSnoopEntry(entry: PersistedSnoopEntry): SnoopEntry {
 			return {
 				family: 'source',
 				logical_key: entry.logicalKey,
-				target: entry.target,
-				start_position: entry.startPosition ?? 0,
-				size: Number(entry.size ?? 0n),
+				target: requestShape?.family === 'source' ? requestShape.target : entry.target,
+				start_position:
+					requestShape?.family === 'source'
+						? requestShape.start_position
+						: (entry.startPosition ?? 0),
+				size:
+					requestShape?.family === 'source'
+						? requestShape.size
+						: Number(entry.size ?? 0n),
 				hit_count: entry.hitCount,
 				first_seen: entry.firstSeen.toISOString(),
 				last_seen: entry.lastSeen.toISOString(),
@@ -77,8 +193,11 @@ function toSnoopEntry(entry: PersistedSnoopEntry): SnoopEntry {
 			return {
 				family: 'notes',
 				logical_key: entry.logicalKey,
-				target: entry.target,
-				size: Number(entry.size ?? 0n),
+				target: requestShape?.family === 'notes' ? requestShape.target : entry.target,
+				size:
+					requestShape?.family === 'notes'
+						? requestShape.size
+						: Number(entry.size ?? 0n),
 				hit_count: entry.hitCount,
 				first_seen: entry.firstSeen.toISOString(),
 				last_seen: entry.lastSeen.toISOString(),
@@ -211,6 +330,7 @@ export async function storeSnoopEntries(
 								logicalKey: entry.logical_key,
 								family: entry.family,
 								target: entry.target,
+								requestShape: buildRequestShape(entry),
 								startPosition: entry.start_position,
 								size: null,
 								restrictivePayloadHex: entry.restrictive_payload_hex,
@@ -225,6 +345,7 @@ export async function storeSnoopEntries(
 								logicalKey: entry.logical_key,
 								family: entry.family,
 								target: entry.target,
+								requestShape: buildRequestShape(entry),
 								startPosition: entry.start_position,
 								size: BigInt(entry.size),
 								restrictivePayloadHex: null,
@@ -239,6 +360,7 @@ export async function storeSnoopEntries(
 								logicalKey: entry.logical_key,
 								family: entry.family,
 								target: entry.target,
+								requestShape: buildRequestShape(entry),
 								startPosition: null,
 								size: BigInt(entry.size),
 								restrictivePayloadHex: null,
@@ -258,6 +380,7 @@ export async function storeSnoopEntries(
 					family: observation.family,
 					logicalKey: observation.logical_key,
 					target: observation.target,
+					requestShape: buildRequestShape(observation),
 					startPosition: observation.start_position,
 					size: observation.size === null ? null : BigInt(observation.size),
 					restrictivePayloadHex: observation.restrictive_payload_hex,

@@ -806,6 +806,7 @@ components:
           completed_cycles,
           idle_cycles,
           emitted_results,
+          widened_cycles,
           posted_batches,
           post_failures,
           last_started_at,
@@ -817,6 +818,10 @@ components:
           last_restrictive_bytes,
           last_result_count,
           last_batches_posted,
+          last_tiers_attempted,
+          last_widest_responder_ceiling,
+          last_widened,
+          last_tiers,
           last_error
         ]
       properties:
@@ -830,6 +835,9 @@ components:
           type: integer
           format: int64
         emitted_results:
+          type: integer
+          format: int64
+        widened_cycles:
           type: integer
           format: int64
         posted_batches:
@@ -867,12 +875,32 @@ components:
           type: integer
         last_batches_posted:
           type: integer
+        last_tiers_attempted:
+          type: integer
+        last_widest_responder_ceiling:
+          type: integer
+          nullable: true
+        last_widened:
+          type: boolean
+        last_tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/KadPassiveReplayTierSummary'
         last_error:
           type: string
           nullable: true
+    KadPassiveReplayTierSummary:
+      type: object
+      required: [responder_ceiling, result_count]
+      properties:
+        responder_ceiling:
+          type: integer
+        result_count:
+          type: integer
     KadHarvestObservability:
       type: object
-      required: [keyword_requests, source_requests, notes_requests, passive_keyword_replay]
+      required:
+        [keyword_requests, source_requests, notes_requests, passive_keyword_replay, passive_source_replay]
       properties:
         keyword_requests:
           $ref: '#/components/schemas/KadHarvestFamilyObservability'
@@ -881,6 +909,8 @@ components:
         notes_requests:
           $ref: '#/components/schemas/KadHarvestFamilyObservability'
         passive_keyword_replay:
+          $ref: '#/components/schemas/KadPassiveReplayObservability'
+        passive_source_replay:
           $ref: '#/components/schemas/KadPassiveReplayObservability'
     ConfigUpdate:
       type: object

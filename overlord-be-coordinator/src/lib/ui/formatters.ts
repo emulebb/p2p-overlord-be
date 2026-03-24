@@ -123,7 +123,8 @@ export function formatPassiveReplay(summary: KadPassiveReplayObservability | nul
 		return 'Pending';
 	}
 
-	return `${summary.completed_cycles}/${summary.started_cycles} cycles · ${summary.emitted_results} results · ${summary.posted_batches} batches`;
+	const widened = summary.widened_cycles > 0 ? ` · ${summary.widened_cycles} widened` : '';
+	return `${summary.completed_cycles}/${summary.started_cycles} cycles · ${summary.emitted_results} results · ${summary.posted_batches} batches${widened}`;
 }
 
 export function summarizeBinding(report: InterfaceBindingReport | null, label: string): string {

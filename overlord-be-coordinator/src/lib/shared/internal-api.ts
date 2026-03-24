@@ -87,11 +87,20 @@ export type SearchCancelRequest = {
 	job_id: string;
 };
 
-export type SearchRequest = {
+export type KeywordSearchRequest = {
 	protocol: Protocol;
 	kind: 'keyword';
 	query: string;
 };
+
+export type HashSearchRequest = {
+	protocol: 'kad2';
+	kind: 'source' | 'notes';
+	file_hash: HashType;
+	file_size: number;
+};
+
+export type SearchRequest = KeywordSearchRequest | HashSearchRequest;
 
 export type SearchDispatchStatus =
 	| 'queued'
@@ -358,6 +367,7 @@ export type KadPassiveReplayObservability = {
 	completed_cycles: number;
 	idle_cycles: number;
 	emitted_results: number;
+	widened_cycles: number;
 	posted_batches: number;
 	post_failures: number;
 	last_started_at: string | null;
@@ -369,7 +379,16 @@ export type KadPassiveReplayObservability = {
 	last_restrictive_bytes: number | null;
 	last_result_count: number;
 	last_batches_posted: number;
+	last_tiers_attempted: number;
+	last_widest_responder_ceiling: number | null;
+	last_widened: boolean;
+	last_tiers: KadPassiveReplayTierSummary[];
 	last_error: string | null;
+};
+
+export type KadPassiveReplayTierSummary = {
+	responder_ceiling: number;
+	result_count: number;
 };
 
 export type KadHarvestObservability = {
@@ -377,6 +396,7 @@ export type KadHarvestObservability = {
 	source_requests: KadHarvestFamilyObservability;
 	notes_requests: KadHarvestFamilyObservability;
 	passive_keyword_replay: KadPassiveReplayObservability;
+	passive_source_replay: KadPassiveReplayObservability;
 };
 
 export type AgentInterfacesView = {

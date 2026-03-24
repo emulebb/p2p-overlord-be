@@ -108,6 +108,7 @@ model SnoopEntry {
   logicalKey String
   family     String
   target     String
+  requestShape Json?
   startPosition Int?
   size       BigInt?
   restrictivePayloadHex String?
@@ -125,6 +126,7 @@ model SnoopLog {
   family                String
   logicalKey            String
   target                String
+  requestShape          Json?
   startPosition         Int?
   size                  BigInt?
   restrictivePayloadHex String?
@@ -140,6 +142,7 @@ model HarvestReplay {
   family                String
   logicalKey            String
   target                String
+  requestShape          Json?
   startPosition         Int?
   size                  BigInt?
   restrictivePayloadHex String?

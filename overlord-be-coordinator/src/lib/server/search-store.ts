@@ -124,6 +124,33 @@ function dedupeSources(sources: FileWithRelations['sources']): FileRecord['sourc
 	return Array.from(seen.values());
 }
 
+function buildHarvestReplayRequestShape(
+	context: HarvestReplayContext | HarvestReplayRecord
+): Prisma.InputJsonValue {
+	switch (context.family) {
+		case 'keyword':
+			return {
+				family: 'keyword',
+				target: context.target,
+				start_position: context.start_position ?? 0,
+				restrictive_payload_hex: context.restrictive_payload_hex
+			};
+		case 'source':
+			return {
+				family: 'source',
+				target: context.target,
+				start_position: context.start_position ?? 0,
+				size: context.size ?? 0
+			};
+		case 'notes':
+			return {
+				family: 'notes',
+				target: context.target,
+				size: context.size ?? 0
+			};
+	}
+}
+
 function toFileRecord(file: FileWithRelations): FileRecord {
 	return {
 		hashes: file.hashes
@@ -454,6 +481,7 @@ async function ensureHarvestReplay(
 			family: context.family,
 			logicalKey: context.logical_key,
 			target: context.target,
+			requestShape: buildHarvestReplayRequestShape(context),
 			startPosition: context.start_position,
 			size: context.size === null ? null : BigInt(context.size),
 			restrictivePayloadHex: context.restrictive_payload_hex,
@@ -468,6 +496,7 @@ async function ensureHarvestReplay(
 			family: context.family,
 			logicalKey: context.logical_key,
 			target: context.target,
+			requestShape: buildHarvestReplayRequestShape(context),
 			startPosition: context.start_position,
 			size: context.size === null ? null : BigInt(context.size),
 			restrictivePayloadHex: context.restrictive_payload_hex
@@ -487,6 +516,7 @@ export async function storeHarvestReplay(record: HarvestReplayRecord): Promise<v
 			family: record.family,
 			logicalKey: record.logical_key,
 			target: record.target,
+			requestShape: buildHarvestReplayRequestShape(record),
 			startPosition: record.start_position,
 			size: record.size === null ? null : BigInt(record.size),
 			restrictivePayloadHex: record.restrictive_payload_hex,
@@ -501,6 +531,7 @@ export async function storeHarvestReplay(record: HarvestReplayRecord): Promise<v
 			family: record.family,
 			logicalKey: record.logical_key,
 			target: record.target,
+			requestShape: buildHarvestReplayRequestShape(record),
 			startPosition: record.start_position,
 			size: record.size === null ? null : BigInt(record.size),
 			restrictivePayloadHex: record.restrictive_payload_hex,

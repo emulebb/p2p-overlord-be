@@ -193,7 +193,10 @@
 		) {
 			return 'good';
 		}
-		if (observability.passive_keyword_replay.idle_cycles > 0) {
+		if (
+			observability.passive_keyword_replay.idle_cycles > 0 ||
+			observability.passive_source_replay.idle_cycles > 0
+		) {
 			return 'accent';
 		}
 		return 'warn';
@@ -723,6 +726,14 @@
 														<dt>Last keyword seen</dt>
 														<dd>{formatTimestamp(agent.harvest_observability.keyword_requests.last_seen_at)}</dd>
 													</div>
+													<div class="kv-row">
+														<dt>Last source seen</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.source_requests.last_seen_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Last notes seen</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.notes_requests.last_seen_at)}</dd>
+													</div>
 												</dl>
 											</section>
 
@@ -734,16 +745,32 @@
 														<dd>{formatPassiveReplay(agent.harvest_observability.passive_keyword_replay)}</dd>
 													</div>
 													<div class="kv-row">
-														<dt>Last start</dt>
+														<dt>Keyword last start</dt>
 														<dd>{formatTimestamp(agent.harvest_observability.passive_keyword_replay.last_started_at)}</dd>
 													</div>
 													<div class="kv-row">
-														<dt>Last completion</dt>
+														<dt>Keyword last completion</dt>
 														<dd>{formatTimestamp(agent.harvest_observability.passive_keyword_replay.last_completed_at)}</dd>
 													</div>
 													<div class="kv-row">
-														<dt>Last target</dt>
+														<dt>Keyword last target</dt>
 														<dd>{agent.harvest_observability.passive_keyword_replay.last_target ?? 'Pending'}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Source replay</dt>
+														<dd>{formatPassiveReplay(agent.harvest_observability.passive_source_replay)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Source last start</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.passive_source_replay.last_started_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Source last completion</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.passive_source_replay.last_completed_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Source last target</dt>
+														<dd>{agent.harvest_observability.passive_source_replay.last_target ?? 'Pending'}</dd>
 													</div>
 												</dl>
 											</section>
