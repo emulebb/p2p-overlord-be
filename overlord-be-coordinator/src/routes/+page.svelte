@@ -195,7 +195,8 @@
 		}
 		if (
 			observability.passive_keyword_replay.idle_cycles > 0 ||
-			observability.passive_source_replay.idle_cycles > 0
+			observability.passive_source_replay.idle_cycles > 0 ||
+			observability.passive_notes_replay.idle_cycles > 0
 		) {
 			return 'accent';
 		}
@@ -771,6 +772,22 @@
 													<div class="kv-row">
 														<dt>Source last target</dt>
 														<dd>{agent.harvest_observability.passive_source_replay.last_target ?? 'Pending'}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Notes replay</dt>
+														<dd>{formatPassiveReplay(agent.harvest_observability.passive_notes_replay)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Notes last start</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.passive_notes_replay.last_started_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Notes last completion</dt>
+														<dd>{formatTimestamp(agent.harvest_observability.passive_notes_replay.last_completed_at)}</dd>
+													</div>
+													<div class="kv-row">
+														<dt>Notes last target</dt>
+														<dd>{agent.harvest_observability.passive_notes_replay.last_target ?? 'Pending'}</dd>
 													</div>
 												</dl>
 											</section>

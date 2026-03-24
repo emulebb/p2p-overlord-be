@@ -397,6 +397,7 @@ export type KadHarvestObservability = {
 	notes_requests: KadHarvestFamilyObservability;
 	passive_keyword_replay: KadPassiveReplayObservability;
 	passive_source_replay: KadPassiveReplayObservability;
+	passive_notes_replay: KadPassiveReplayObservability;
 };
 
 export type AgentInterfacesView = {
