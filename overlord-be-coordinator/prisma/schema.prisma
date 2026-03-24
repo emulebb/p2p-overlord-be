@@ -55,6 +55,8 @@ model Source {
   extra     Json
   seenAt    DateTime @default(now())
   file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([fileId])
 }
 
 model SearchJob {
@@ -101,6 +103,7 @@ model SearchResult {
   file       File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@id([jobId, fileId])
+  @@index([fileId])
 }
 
 model SnoopEntry {
