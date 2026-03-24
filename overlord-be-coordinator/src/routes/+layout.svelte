@@ -17,6 +17,7 @@
 
 	const navigation = [
 		{ href: '/', label: 'Dashboard' },
+		{ href: '/files', label: 'Files' },
 		{ href: '/#quick-search', label: 'Quick Search' },
 		{ href: '/#agent-networking', label: 'Agents' }
 	];
@@ -26,7 +27,11 @@
 			return pathname === '/';
 		}
 
-		return pathname === '/' && href.startsWith('/#');
+		if (href.startsWith('/#')) {
+			return pathname === '/';
+		}
+
+		return pathname === href;
 	}
 </script>
 
@@ -50,6 +55,9 @@
 					{item.label}
 				</a>
 			{/each}
+			{#if $page.url.pathname === '/files'}
+				<span class="app-nav__context">Indexed Files</span>
+			{/if}
 			{#if $page.url.pathname.startsWith('/search/')}
 				<span class="app-nav__context">Search Job</span>
 			{/if}

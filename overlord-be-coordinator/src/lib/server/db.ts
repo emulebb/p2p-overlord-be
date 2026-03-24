@@ -1,10 +1,13 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { readFileSync } from 'node:fs';
+import { Pool } from 'pg';
 
 declare global {
 	// eslint-disable-next-line no-var
 	var __overlordPrisma: PrismaClient | undefined;
+	// eslint-disable-next-line no-var
+	var __overlordPgPool: Pool | undefined;
 }
 
 function readDatabaseUrlFromEnvFile(): string | null {
@@ -50,4 +53,13 @@ export function getDb(): PrismaClient {
 		globalThis.__overlordPrisma = new PrismaClient({ adapter });
 	}
 	return globalThis.__overlordPrisma;
+}
+
+export function getPgPool(): Pool {
+	if (!globalThis.__overlordPgPool) {
+		globalThis.__overlordPgPool = new Pool({
+			connectionString: getDatabaseUrl()
+		});
+	}
+	return globalThis.__overlordPgPool;
 }

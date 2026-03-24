@@ -8,18 +8,25 @@ import { getReadyIndexersByProtocol } from '$lib/server/state';
 export const POST: RequestHandler = async ({ request, url, fetch }) => {
 	const payload = (await request.json()) as Partial<SearchRequest>;
 	const query = payload.query?.trim();
-	if (!query || payload.kind !== 'keyword' || payload.protocol !== 'kad2') {
-		return json({ error: 'expected { protocol: "kad2", kind: "keyword", query }' }, { status: 400 });
+	if (!query || payload.kind !== 'keyword' || (payload.protocol !== 'kad2' && payload.protocol !== 'ed2k')) {
+		return json(
+			{ error: 'expected { protocol: "kad2" | "ed2k", kind: "keyword", query }' },
+			{ status: 400 }
+		);
 	}
 
 	await refreshAllAgentInterfaces();
-	const agents = getReadyIndexersByProtocol('kad2');
+	const agents =
+		payload.protocol === 'ed2k'
+			? getReadyIndexersByProtocol('kad2')
+			: getReadyIndexersByProtocol(payload.protocol);
 	if (agents.length === 0) {
-		return json({ error: 'no ready kad2 agents' }, { status: 503 });
+		return json({ error: `no ready ${payload.protocol} agents` }, { status: 503 });
 	}
 
 	const job: SearchJob = {
 		job_id: crypto.randomUUID(),
+		protocol: payload.protocol,
 		kind: 'keyword',
 		query,
 		file_hash: null,

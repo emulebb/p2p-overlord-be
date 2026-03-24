@@ -1,4 +1,4 @@
-export type Protocol = 'kad2';
+export type Protocol = 'kad2' | 'ed2k';
 
 export type HashType = {
 	kind: 'ed2k';
@@ -33,10 +33,38 @@ export type FileRecord = {
 	sources: Source[];
 };
 
+export type IndexedFileSort =
+	| 'last_seen_desc'
+	| 'first_seen_desc'
+	| 'name_asc'
+	| 'size_desc'
+	| 'sources_desc'
+	| 'searches_desc';
+
+export type IndexedFileView = FileRecord & {
+	file_id: number;
+	primary_name: string;
+	first_seen: string;
+	last_seen: string;
+	source_count: number;
+	search_job_count: number;
+};
+
+export type IndexedFileListResponse = {
+	items: IndexedFileView[];
+	page: number;
+	page_size: number;
+	total: number;
+	total_pages: number;
+	query: string;
+	sort: IndexedFileSort;
+};
+
 export type SearchKind = 'keyword' | 'source' | 'notes';
 
 export type SearchJob = {
 	job_id: string;
+	protocol: Protocol;
 	kind: SearchKind;
 	query: string | null;
 	file_hash: HashType | null;
@@ -60,7 +88,7 @@ export type SearchCancelRequest = {
 };
 
 export type SearchRequest = {
-	protocol: 'kad2';
+	protocol: Protocol;
 	kind: 'keyword';
 	query: string;
 };

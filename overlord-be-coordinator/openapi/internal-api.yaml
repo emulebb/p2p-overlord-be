@@ -162,7 +162,7 @@ components:
   schemas:
     Protocol:
       type: string
-      enum: [kad2]
+      enum: [kad2, ed2k]
     HashType:
       type: object
       required: [kind, value]
@@ -224,11 +224,13 @@ components:
       enum: [keyword, source, notes]
     SearchJob:
       type: object
-      required: [job_id, kind, query, file_hash, file_size, callback_url]
+      required: [job_id, protocol, kind, query, file_hash, file_size, callback_url]
       properties:
         job_id:
           type: string
           format: uuid
+        protocol:
+          $ref: '#/components/schemas/Protocol'
         kind:
           $ref: '#/components/schemas/SearchKind'
         query:

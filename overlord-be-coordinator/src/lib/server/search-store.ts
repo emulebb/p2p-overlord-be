@@ -1,12 +1,15 @@
 import { Prisma, type SearchDispatch as PrismaSearchDispatch } from '@prisma/client';
 
-import { getDb } from '$lib/server/db';
+import { getDb, getPgPool } from '$lib/server/db';
 import { publishSearchStream } from '$lib/server/search-events';
 import type {
 	FileRecord,
 	HarvestReplayContext,
 	HarvestReplayRecord,
 	HashType,
+	IndexedFileListResponse,
+	IndexedFileSort,
+	IndexedFileView,
 	ResultBatch,
 	SearchDispatchStatus,
 	SearchDispatchView,
@@ -17,10 +20,20 @@ import type {
 } from '$lib/shared/internal-api';
 
 const FILE_INCLUDE = {
-	hashes: true,
-	names: true,
-	tags: true,
-	sources: true
+	hashes: {
+		orderBy: [{ hashType: 'asc' }, { hashValue: 'asc' }]
+	},
+	names: {
+		orderBy: [{ firstSeen: 'asc' }, { id: 'asc' }]
+	},
+	tags: {
+		orderBy: {
+			id: 'asc'
+		}
+	},
+	sources: {
+		orderBy: [{ seenAt: 'desc' }, { id: 'desc' }]
+	}
 } satisfies Prisma.FileInclude;
 
 const SEARCH_JOB_INCLUDE = {
@@ -48,6 +61,19 @@ type FileWithRelations = Prisma.FileGetPayload<{
 type SearchJobWithRelations = Prisma.SearchJobGetPayload<{
 	include: typeof SEARCH_JOB_INCLUDE;
 }>;
+
+type IndexedFileRow = {
+	fileId: string;
+	sourceCount: string;
+	searchJobCount: string;
+};
+
+type IndexedFileCountRow = {
+	count: string;
+};
+
+const DEFAULT_INDEXED_FILE_PAGE_SIZE = 25;
+const MAX_INDEXED_FILE_PAGE_SIZE = 100;
 
 function toIso(value: Date | null): string | null {
 	return value ? value.toISOString() : null;
@@ -90,7 +116,7 @@ function dedupeSources(sources: FileWithRelations['sources']): FileRecord['sourc
 	const seen = new Map<string, FileRecord['sources'][number]>();
 	for (const source of sources) {
 		seen.set(`${source.protocol}:${source.address}:${JSON.stringify(source.extra)}`, {
-			protocol: source.protocol === 'kad2' ? 'kad2' : 'kad2',
+			protocol: source.protocol === 'ed2k' ? 'ed2k' : 'kad2',
 			address: source.address,
 			extra: source.extra as unknown
 		});
@@ -118,6 +144,101 @@ function toFileRecord(file: FileWithRelations): FileRecord {
 	};
 }
 
+function primaryFileName(file: FileWithRelations): string {
+	return file.names[0]?.name ?? file.hashes[0]?.hashValue ?? 'unnamed file';
+}
+
+function toIndexedFileView(
+	file: FileWithRelations,
+	metrics: { sourceCount: string; searchJobCount: string }
+): IndexedFileView {
+	return {
+		file_id: Number(file.id),
+		primary_name: primaryFileName(file),
+		first_seen: file.firstSeen.toISOString(),
+		last_seen: file.lastSeen.toISOString(),
+		source_count: Number(metrics.sourceCount),
+		search_job_count: Number(metrics.searchJobCount),
+		...toFileRecord(file)
+	};
+}
+
+function buildIndexedFileOrder(sort: IndexedFileSort, hasQuery: boolean): string {
+	if (hasQuery) {
+		switch (sort) {
+			case 'first_seen_desc':
+				return 'ORDER BY score DESC NULLS LAST, "firstSeen" DESC, "fileId" DESC';
+			case 'name_asc':
+				return 'ORDER BY score DESC NULLS LAST, "primaryName" ASC, "fileId" ASC';
+			case 'sources_desc':
+				return 'ORDER BY score DESC NULLS LAST, "sourceCount" DESC, "lastSeen" DESC, "fileId" DESC';
+			case 'searches_desc':
+				return 'ORDER BY score DESC NULLS LAST, "searchJobCount" DESC, "lastSeen" DESC, "fileId" DESC';
+			case 'size_desc':
+				return 'ORDER BY score DESC NULLS LAST, size DESC NULLS LAST, "fileId" DESC';
+			case 'last_seen_desc':
+			default:
+				return 'ORDER BY score DESC NULLS LAST, "lastSeen" DESC, "fileId" DESC';
+		}
+	}
+
+	switch (sort) {
+		case 'first_seen_desc':
+			return 'ORDER BY "firstSeen" DESC, "fileId" DESC';
+		case 'name_asc':
+			return 'ORDER BY "primaryName" ASC, "fileId" ASC';
+		case 'sources_desc':
+			return 'ORDER BY "sourceCount" DESC, "lastSeen" DESC, "fileId" DESC';
+		case 'searches_desc':
+			return 'ORDER BY "searchJobCount" DESC, "lastSeen" DESC, "fileId" DESC';
+		case 'size_desc':
+			return 'ORDER BY size DESC NULLS LAST, "fileId" DESC';
+		case 'last_seen_desc':
+		default:
+			return 'ORDER BY "lastSeen" DESC, "fileId" DESC';
+	}
+}
+
+/**
+ * Normalizes browse query parameters before they reach the indexed-file listing query.
+ */
+export function normalizeIndexedFileListParams(input: {
+	page?: number;
+	pageSize?: number;
+	query?: string;
+	sort?: string;
+}): {
+	page: number;
+	pageSize: number;
+	query: string;
+	sort: IndexedFileSort;
+} {
+	const page =
+		typeof input.page === 'number' && Number.isFinite(input.page) && input.page > 0
+			? Math.floor(input.page)
+			: 1;
+	const requestedPageSize =
+		typeof input.pageSize === 'number' && Number.isFinite(input.pageSize) && input.pageSize > 0
+			? Math.floor(input.pageSize)
+			: DEFAULT_INDEXED_FILE_PAGE_SIZE;
+	const sort: IndexedFileSort =
+		input.sort === 'first_seen_desc' ||
+		input.sort === 'name_asc' ||
+		input.sort === 'sources_desc' ||
+		input.sort === 'searches_desc' ||
+		input.sort === 'size_desc' ||
+		input.sort === 'last_seen_desc'
+			? input.sort
+			: 'last_seen_desc';
+
+	return {
+		page,
+		pageSize: Math.min(requestedPageSize, MAX_INDEXED_FILE_PAGE_SIZE),
+		query: input.query?.trim() ?? '',
+		sort
+	};
+}
+
 function toDispatchView(dispatch: PrismaSearchDispatch): SearchDispatchView {
 	return {
 		indexer_id: dispatch.indexerId,
@@ -134,7 +255,7 @@ function toDispatchView(dispatch: PrismaSearchDispatch): SearchDispatchView {
 function toJobView(job: SearchJobWithRelations): SearchJobStatusView {
 	return {
 		job_id: job.id,
-		protocol: 'kad2',
+		protocol: job.protocol as SearchJobStatusView['protocol'],
 		kind: job.kind as SearchJobStatusView['kind'],
 		query: job.query,
 		file_hash: parseHash(job.fileHash),
@@ -397,7 +518,7 @@ export async function createSearchJob(job: SearchJob, indexerIds: string[]): Pro
 	await db.searchJob.create({
 		data: {
 			id: job.job_id,
-			protocol: 'kad2',
+			protocol: job.protocol,
 			kind: job.kind,
 			query: job.query,
 			fileHash: serializeHash(job.file_hash),
@@ -625,6 +746,201 @@ export async function listRecentSearchJobs(limit = 10): Promise<SearchJobStatusV
 		include: SEARCH_JOB_INCLUDE
 	});
 	return jobs.map(toJobView);
+}
+
+/**
+ * Lists indexed files from the coordinator database with optional PostgreSQL full-text search.
+ */
+export async function listIndexedFiles(input: {
+	page?: number;
+	pageSize?: number;
+	query?: string;
+	sort?: IndexedFileSort;
+}): Promise<IndexedFileListResponse> {
+	const db = getDb();
+	const pgPool = getPgPool();
+	const params = normalizeIndexedFileListParams(input);
+	const offset = (params.page - 1) * params.pageSize;
+	const hasQuery = params.query.length > 0;
+	const orderBy = buildIndexedFileOrder(params.sort, hasQuery);
+
+	// Keep the browse API file-centric even when several names for the same file match the query.
+	const countResult = hasQuery
+		? await pgPool.query<IndexedFileCountRow>(
+				`
+				SELECT COUNT(*)::bigint AS count
+				FROM "File" f
+				WHERE EXISTS (
+					SELECT 1
+					FROM "FileName" fn
+					WHERE fn."fileId" = f.id
+						AND fn."nameTsv" @@ websearch_to_tsquery('english', $1)
+				)
+			`,
+				[params.query]
+			)
+		: await pgPool.query<IndexedFileCountRow>(
+				`
+				SELECT COUNT(*)::bigint AS count
+				FROM "File"
+			`
+			);
+
+	const fileResult = hasQuery
+		? await pgPool.query<IndexedFileRow>(
+				`
+				WITH source_counts AS (
+					SELECT deduped."fileId", COUNT(*)::bigint AS "sourceCount"
+					FROM (
+						SELECT DISTINCT s."fileId", s."protocol", s."address", s."extra"
+						FROM "Source" s
+					) deduped
+					GROUP BY deduped."fileId"
+				),
+				search_counts AS (
+					SELECT sr."fileId", COUNT(DISTINCT sr."jobId")::bigint AS "searchJobCount"
+					FROM "SearchResult" sr
+					GROUP BY sr."fileId"
+				),
+				ranked_files AS (
+					SELECT
+						f.id AS "fileId",
+						COALESCE(primary_name.name, '') AS "primaryName",
+						COALESCE(source_counts."sourceCount", 0::bigint) AS "sourceCount",
+						COALESCE(search_counts."searchJobCount", 0::bigint) AS "searchJobCount",
+						f.size AS size,
+						f."firstSeen" AS "firstSeen",
+						f."lastSeen" AS "lastSeen",
+						MAX(ts_rank(fn."nameTsv", websearch_to_tsquery('english', $1))) AS score
+					FROM "File" f
+					JOIN "FileName" fn
+						ON fn."fileId" = f.id
+						AND fn."nameTsv" @@ websearch_to_tsquery('english', $1)
+					LEFT JOIN LATERAL (
+						SELECT fn_primary."name" AS name
+						FROM "FileName" fn_primary
+						WHERE fn_primary."fileId" = f.id
+						ORDER BY fn_primary."firstSeen" ASC, fn_primary.id ASC
+						LIMIT 1
+					) primary_name ON TRUE
+					LEFT JOIN source_counts
+						ON source_counts."fileId" = f.id
+					LEFT JOIN search_counts
+						ON search_counts."fileId" = f.id
+					GROUP BY
+						f.id,
+						primary_name.name,
+						source_counts."sourceCount",
+						search_counts."searchJobCount",
+						f.size,
+						f."firstSeen",
+						f."lastSeen"
+					${orderBy}
+					LIMIT $2
+					OFFSET $3
+				)
+				SELECT "fileId", "sourceCount", "searchJobCount"
+				FROM ranked_files
+			`,
+				[params.query, params.pageSize, offset]
+			)
+		: await pgPool.query<IndexedFileRow>(
+				`
+				WITH source_counts AS (
+					SELECT deduped."fileId", COUNT(*)::bigint AS "sourceCount"
+					FROM (
+						SELECT DISTINCT s."fileId", s."protocol", s."address", s."extra"
+						FROM "Source" s
+					) deduped
+					GROUP BY deduped."fileId"
+				),
+				search_counts AS (
+					SELECT sr."fileId", COUNT(DISTINCT sr."jobId")::bigint AS "searchJobCount"
+					FROM "SearchResult" sr
+					GROUP BY sr."fileId"
+				),
+				listed_files AS (
+					SELECT
+						f.id AS "fileId",
+						COALESCE(primary_name.name, '') AS "primaryName",
+						COALESCE(source_counts."sourceCount", 0::bigint) AS "sourceCount",
+						COALESCE(search_counts."searchJobCount", 0::bigint) AS "searchJobCount",
+						f.size AS size,
+						f."firstSeen" AS "firstSeen",
+						f."lastSeen" AS "lastSeen"
+					FROM "File" f
+					LEFT JOIN LATERAL (
+						SELECT fn_primary."name" AS name
+						FROM "FileName" fn_primary
+						WHERE fn_primary."fileId" = f.id
+						ORDER BY fn_primary."firstSeen" ASC, fn_primary.id ASC
+						LIMIT 1
+					) primary_name ON TRUE
+					LEFT JOIN source_counts
+						ON source_counts."fileId" = f.id
+					LEFT JOIN search_counts
+						ON search_counts."fileId" = f.id
+					${orderBy}
+					LIMIT $1
+					OFFSET $2
+				)
+				SELECT "fileId", "sourceCount", "searchJobCount"
+				FROM listed_files
+			`,
+				[params.pageSize, offset]
+			);
+
+	const countRows = countResult.rows;
+	const fileRows = fileResult.rows;
+
+	const orderedIds = fileRows.map((row) => BigInt(row.fileId));
+	if (orderedIds.length === 0) {
+		return {
+			items: [],
+			page: params.page,
+			page_size: params.pageSize,
+			total: Number(countRows[0]?.count ?? 0n),
+			total_pages: Math.ceil(Number(countRows[0]?.count ?? 0n) / params.pageSize),
+			query: params.query,
+			sort: params.sort
+		};
+	}
+
+	const files = await db.file.findMany({
+		where: {
+			id: {
+				in: orderedIds
+			}
+		},
+		include: FILE_INCLUDE
+	});
+	const filesById = new Map(files.map((file) => [file.id.toString(), file]));
+	const metricsById = new Map(
+		fileRows.map((row) => [
+			row.fileId,
+			{
+				sourceCount: row.sourceCount,
+				searchJobCount: row.searchJobCount
+			}
+		])
+	);
+
+	return {
+		items: orderedIds
+			.map((fileId) => {
+				const key = fileId.toString();
+				const file = filesById.get(key);
+				const metrics = metricsById.get(key);
+				return file && metrics ? toIndexedFileView(file, metrics) : null;
+			})
+			.filter((file): file is IndexedFileView => file !== null),
+		page: params.page,
+		page_size: params.pageSize,
+		total: Number(countRows[0]?.count ?? 0n),
+		total_pages: Math.ceil(Number(countRows[0]?.count ?? 0n) / params.pageSize),
+		query: params.query,
+		sort: params.sort
+	};
 }
 
 export async function getSearchCounters() {

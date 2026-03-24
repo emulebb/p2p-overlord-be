@@ -5,6 +5,7 @@
 		InterfaceSelectionState,
 		KadHarvestObservability,
 		KadPublishObservability,
+		SearchRequest,
 		SearchJobStatusView,
 		SnoopDemandHoleEntry,
 		SnoopDashboardEntry,
@@ -54,6 +55,7 @@
 		| undefined;
 
 	let query = '';
+	let searchProtocol: SearchRequest['protocol'] = 'kad2';
 	let searchError = '';
 	let creatingSearch = false;
 	let snoops: SnoopDashboardEntry[] = [];
@@ -80,7 +82,7 @@
 					'content-type': 'application/json'
 				},
 				body: JSON.stringify({
-					protocol: 'kad2',
+					protocol: searchProtocol,
 					kind: 'keyword',
 					query: trimmed
 				})
@@ -266,7 +268,7 @@
 			<SummaryCard
 				label="Indexed Files"
 				value={data.shellStatus.file_count}
-				hint="Promoted file rows available for browse and search flows."
+				hint="Promoted file rows available for browse and search flows at /files."
 				tone="good"
 			/>
 			<SummaryCard
@@ -285,10 +287,17 @@
 		<section class="split-grid">
 			<Panel
 				title="Quick Search"
-				subtitle="Launch a Kad keyword search and jump straight into the live job view."
+				subtitle="Launch a Kad or ED2K keyword search and jump straight into the live job view."
 			>
 				<div class="stack" id="quick-search">
 					<form class="inline-form" on:submit|preventDefault={startSearch}>
+						<label class="field">
+							<span>Protocol</span>
+							<select class="input" bind:value={searchProtocol}>
+								<option value="kad2">Kad</option>
+								<option value="ed2k">ED2K server</option>
+							</select>
+						</label>
 						<label class="field">
 							<span>Keyword query</span>
 							<input
@@ -305,7 +314,13 @@
 
 					<p class="hint">
 						This keeps the current coordinator flow intact: `POST /api/search`, then redirect
-						to the live SSE job page.
+						to the live SSE job page. ED2K keyword jobs are routed to the current eMule agents
+						through the existing registration path until multi-protocol registration lands.
+					</p>
+
+					<p class="hint">
+						Need the persisted index instead of a live search job? Browse it directly at
+						<a class="text-link" href="/files">/files</a>.
 					</p>
 
 					{#if searchError}

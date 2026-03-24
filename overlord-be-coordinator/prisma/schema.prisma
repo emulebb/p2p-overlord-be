@@ -36,6 +36,7 @@ model FileName {
   file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@unique([fileId, name])
+  @@index([fileId])
 }
 
 model FileTag {
