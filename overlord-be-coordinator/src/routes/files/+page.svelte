@@ -33,6 +33,7 @@
 	let sort = data.files.sort;
 	let loading = false;
 	let error = '';
+	let expandedFileIds = new Set<number>();
 
 	$: if (data.files !== lastServerResponse) {
 		lastServerResponse = data.files;
@@ -41,6 +42,20 @@
 		sort = data.files.sort;
 		loading = false;
 		error = '';
+		expandedFileIds = new Set();
+	}
+
+	/**
+	 * Toggles the inline disclosure row for one indexed file without leaving table context.
+	 */
+	function toggleExpandedFile(fileId: number): void {
+		const nextExpanded = new Set(expandedFileIds);
+		if (nextExpanded.has(fileId)) {
+			nextExpanded.delete(fileId);
+		} else {
+			nextExpanded.add(fileId);
+		}
+		expandedFileIds = nextExpanded;
 	}
 
 	function buildSearchParams(page: number): URLSearchParams {
@@ -217,7 +232,7 @@
 
 	<Panel
 		title="Indexed Results"
-		subtitle="Compact file rows with direct eD2k copy and inline record expansion."
+		subtitle="Dense file rows with direct eD2k copy and inline disclosure on demand."
 	>
 		{#if response.items.length === 0}
 			<p class="message message--accent">
@@ -229,7 +244,7 @@
 			</p>
 		{:else}
 			<div class="table-shell wm-shell">
-				<table class="wm-table">
+				<table class="wm-table wm-table--dense">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -266,16 +281,26 @@
 								<td class="mono">{file.search_job_count}</td>
 								<td class="mono">{formatCompactTimestamp(file.last_seen)}</td>
 								<td>
-									<div class="flex items-center gap-2">
+									<div class="result-row-actions">
 										<Ed2kCopyButton file={file} />
+										<button
+											class="row-toggle"
+											type="button"
+											aria-expanded={expandedFileIds.has(file.file_id)}
+											aria-label={expandedFileIds.has(file.file_id)
+												? `Collapse indexed details for ${file.primary_name}`
+												: `Expand indexed details for ${file.primary_name}`}
+											on:click={() => toggleExpandedFile(file.file_id)}
+										>
+											{expandedFileIds.has(file.file_id) ? '▾' : '▸'}
+										</button>
 									</div>
 								</td>
 							</tr>
-							<tr>
+							{#if expandedFileIds.has(file.file_id)}
+								<tr class="detail-row">
 								<td colspan="7" class="bg-[#f8fbfd]">
-									<details class="inline-details">
-										<summary>Inspect indexed record</summary>
-
+									<div class="inline-details">
 										<div class="detail-grid">
 											<section class="subpanel">
 												<h4>eD2k link</h4>
@@ -352,9 +377,10 @@
 												{/if}
 											</section>
 										</div>
-									</details>
+									</div>
 								</td>
-							</tr>
+								</tr>
+							{/if}
 						{/each}
 					</tbody>
 				</table>

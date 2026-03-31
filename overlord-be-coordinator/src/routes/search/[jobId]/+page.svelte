@@ -38,6 +38,7 @@
 	let streamState: StreamState = 'connecting';
 	let lastHeartbeatAt: string | null = null;
 	let lastMessageAt: string | null = null;
+	let expandedResultKeys = new Set<string>();
 
 	function statusTone(status: SearchJobStatusView['status']): 'accent' | 'good' | 'warn' | 'danger' {
 		switch (status) {
@@ -82,6 +83,26 @@
 			default:
 				return 'accent';
 		}
+	}
+
+	/**
+	 * Builds a stable-enough client key for row disclosure without relying on server-side UI ids.
+	 */
+	function resultKey(file: FileRecord, index: number): string {
+		return `${primaryHashValue(file)}:${primaryFileName(file)}:${index}`;
+	}
+
+	/**
+	 * Toggles the inline disclosure row for one streamed result.
+	 */
+	function toggleExpandedResult(key: string): void {
+		const nextExpanded = new Set(expandedResultKeys);
+		if (nextExpanded.has(key)) {
+			nextExpanded.delete(key);
+		} else {
+			nextExpanded.add(key);
+		}
+		expandedResultKeys = nextExpanded;
 	}
 
 	async function cancelSearch() {
@@ -302,7 +323,7 @@
 			<p class="message message--accent">No results yet. Keep this page open while agents continue searching.</p>
 		{:else}
 			<div class="table-shell wm-shell">
-				<table class="wm-table">
+				<table class="wm-table wm-table--dense">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -314,7 +335,8 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each job.results as file}
+						{#each job.results as file, index}
+							{@const key = resultKey(file, index)}
 							<tr class="hover:bg-[#f4f8fb]">
 								<td>
 									<div class="flex flex-col gap-1">
@@ -331,13 +353,27 @@
 								<td class="mono break-all">{primaryHashValue(file)}</td>
 								<td class="mono">{file.sources.length}</td>
 								<td class="mono">{file.tags.length}</td>
-								<td><Ed2kCopyButton file={file} /></td>
+								<td>
+									<div class="result-row-actions">
+										<Ed2kCopyButton file={file} />
+										<button
+											class="row-toggle"
+											type="button"
+											aria-expanded={expandedResultKeys.has(key)}
+											aria-label={expandedResultKeys.has(key)
+												? `Collapse streamed details for ${primaryFileName(file)}`
+												: `Expand streamed details for ${primaryFileName(file)}`}
+											on:click={() => toggleExpandedResult(key)}
+										>
+											{expandedResultKeys.has(key) ? '▾' : '▸'}
+										</button>
+									</div>
+								</td>
 							</tr>
-							<tr>
+							{#if expandedResultKeys.has(key)}
+								<tr class="detail-row">
 								<td colspan="6" class="bg-[#f8fbfd]">
-									<details class="inline-details">
-										<summary>Inspect streamed result</summary>
-
+									<div class="inline-details">
 										<div class="detail-grid">
 											<section class="subpanel">
 												<h4>eD2k link</h4>
@@ -401,9 +437,10 @@
 												{/if}
 											</section>
 										</div>
-									</details>
+									</div>
 								</td>
-							</tr>
+								</tr>
+							{/if}
 						{/each}
 					</tbody>
 				</table>

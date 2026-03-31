@@ -556,6 +556,10 @@ pre {
 	background: #fff;
 }
 
+.wm-table--dense {
+	min-width: 42rem;
+}
+
 .data-table th,
 .data-table td,
 .wm-table th,
@@ -565,6 +569,11 @@ pre {
 	vertical-align: top;
 	border-right: 1px solid var(--color-border);
 	border-bottom: 1px solid var(--color-border);
+}
+
+.wm-table--dense th,
+.wm-table--dense td {
+	padding: 0.45rem 0.55rem;
 }
 
 .data-table th,
@@ -757,15 +766,6 @@ pre {
 	border: 1px solid var(--color-border);
 }
 
-.inline-details summary {
-	cursor: pointer;
-	font-weight: 700;
-	font-size: 0.72rem;
-	letter-spacing: 0.14em;
-	font-family: var(--font-mono);
-	text-transform: uppercase;
-}
-
 .pagination-row {
 	display: flex;
 	flex-wrap: wrap;
@@ -853,6 +853,39 @@ pre {
 	background: var(--color-danger-soft);
 	border-color: #bf7b7b;
 	color: var(--color-danger);
+}
+
+.result-row-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.35rem;
+	min-width: 6.4rem;
+}
+
+.row-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 1.5rem;
+	block-size: 1.5rem;
+	padding: 0;
+	border: 1px solid var(--color-border-strong);
+	background: #fff;
+	color: var(--color-text);
+	font-family: var(--font-mono);
+	font-size: 0.85rem;
+	line-height: 1;
+	cursor: pointer;
+	box-shadow: 1px 1px 0 rgba(19, 32, 43, 0.08);
+}
+
+.row-toggle:hover {
+	background: var(--color-surface-muted);
+}
+
+.detail-row td {
+	padding: 0.35rem 0.45rem;
 }
 
 .text-link {
