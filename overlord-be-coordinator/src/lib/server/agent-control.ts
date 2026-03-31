@@ -1,4 +1,5 @@
 import type {
+	AgentActivitySnapshot,
 	AgentNetworkReport,
 	AgentNetworkingConfig,
 	ConfigUpdate,
@@ -16,6 +17,7 @@ import {
 	getAgentNetworkingConfig,
 	getAgentInterfaceState,
 	getRegistration,
+	storeAgentActivity,
 	storeAgentHarvestObservability,
 	storeAgentInterfaceError,
 	storeAgentInterfaceReport,
@@ -301,6 +303,20 @@ function summarizeNat(status: NatStatusSnapshot | null) {
 		: null;
 }
 
+function summarizeActivity(activity: AgentActivitySnapshot | null) {
+	return activity
+		? {
+				state: activity.state,
+				since: activity.since,
+				job_id: activity.job_id,
+				query_or_target: activity.query_or_target,
+				progress_current: activity.progress_current,
+				progress_total: activity.progress_total,
+				last_error: activity.last_error
+			}
+		: null;
+}
+
 function summarizeMismatch(
 	config: AgentNetworkingConfig,
 	report: AgentNetworkReport,
@@ -348,6 +364,7 @@ async function refreshAgentInterfaceInternal(
 		}
 		storeAgentInterfaceReport(indexerId, report);
 		storeAgentNatStatus(indexerId, stats.nat);
+		storeAgentActivity(indexerId, stats.agent_activity);
 		storeAgentPublishObservability(indexerId, stats.publish_observability);
 		storeAgentHarvestObservability(indexerId, stats.harvest_observability);
 		const config = getAgentNetworkingConfig(indexerId);
@@ -356,6 +373,7 @@ async function refreshAgentInterfaceInternal(
 			recursion_depth: recursionDepth,
 			report: summarizeReport(report),
 			nat: summarizeNat(stats.nat),
+			activity: summarizeActivity(stats.agent_activity),
 			config: summarizeConfig(config)
 		});
 		if (!networkingConfigMatchesRuntime(config, report, stats.nat)) {
@@ -367,6 +385,7 @@ async function refreshAgentInterfaceInternal(
 					recursion_depth: recursionDepth,
 					report: summarizeReport(report),
 					nat: summarizeNat(stats.nat),
+					activity: summarizeActivity(stats.agent_activity),
 					adopted_config: summarizeConfig(adoptedConfig)
 				});
 				return report;
@@ -377,6 +396,7 @@ async function refreshAgentInterfaceInternal(
 				mismatch: summarizeMismatch(config, report, stats.nat),
 				report: summarizeReport(report),
 				nat: summarizeNat(stats.nat),
+				activity: summarizeActivity(stats.agent_activity),
 				config: summarizeConfig(config)
 			});
 			return applyAgentInterfaceSelectionInternal(
@@ -391,7 +411,8 @@ async function refreshAgentInterfaceInternal(
 			indexer_id: indexerId,
 			recursion_depth: recursionDepth,
 			report: summarizeReport(report),
-			nat: summarizeNat(stats.nat)
+			nat: summarizeNat(stats.nat),
+			activity: summarizeActivity(stats.agent_activity)
 		});
 		return report;
 	} catch (error) {

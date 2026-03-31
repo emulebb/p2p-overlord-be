@@ -1,4 +1,5 @@
 import type {
+	AgentActivitySnapshot,
 	AgentInterfacesView,
 	FileRecord,
 	InterfaceBindingReport,
@@ -46,6 +47,26 @@ export function formatCompactTimestamp(value: string | null): string {
 		hour: '2-digit',
 		minute: '2-digit'
 	});
+}
+
+export function formatDurationSince(value: string | null): string {
+	if (!value) {
+		return 'Pending';
+	}
+
+	const elapsedMs = Math.max(0, Date.now() - new Date(value).getTime());
+	const totalSeconds = Math.floor(elapsedMs / 1000);
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+
+	if (hours > 0) {
+		return `${hours}h ${minutes}m`;
+	}
+	if (minutes > 0) {
+		return `${minutes}m ${seconds}s`;
+	}
+	return `${seconds}s`;
 }
 
 export function formatBytes(value: number | null): string {
@@ -125,6 +146,30 @@ export function formatPassiveReplay(summary: KadPassiveReplayObservability | nul
 
 	const widened = summary.widened_cycles > 0 ? ` · ${summary.widened_cycles} widened` : '';
 	return `${summary.completed_cycles}/${summary.started_cycles} cycles · ${summary.emitted_results} results · ${summary.posted_batches} batches${widened}`;
+}
+
+export function formatAgentActivityState(activity: AgentActivitySnapshot | null): string {
+	if (!activity) {
+		return 'Pending';
+	}
+
+	return activity.state.replaceAll('_', ' ');
+}
+
+export function formatAgentActivityProgress(activity: AgentActivitySnapshot | null): string {
+	if (!activity) {
+		return 'Pending';
+	}
+
+	if (activity.progress_current !== null && activity.progress_total !== null) {
+		return `${activity.progress_current}/${activity.progress_total}`;
+	}
+
+	if (activity.progress_current !== null) {
+		return `${activity.progress_current}`;
+	}
+
+	return 'n/a';
 }
 
 export function summarizeBinding(report: InterfaceBindingReport | null, label: string): string {

@@ -118,7 +118,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [registration, report, config, nat, last_error]
+                required: [registration, report, config, nat, agent_activity, last_error]
                 properties:
                   registration:
                     $ref: '#/components/schemas/IndexerRegistration'
@@ -131,6 +131,10 @@ paths:
                   nat:
                     allOf:
                       - $ref: '#/components/schemas/NatStatusSnapshot'
+                    nullable: true
+                  agent_activity:
+                    allOf:
+                      - $ref: '#/components/schemas/AgentActivitySnapshot'
                     nullable: true
                   last_error:
                     type: string
@@ -574,6 +578,58 @@ components:
         last_error:
           type: string
           nullable: true
+    AgentActivityState:
+      type: string
+      enum:
+        [starting, bootstrapping, idle, active_search, passive_harvest_replay, publishing, flushing_snoops, reconfiguring, degraded]
+    AgentActivitySnapshot:
+      type: object
+      required:
+        [
+          state,
+          since,
+          job_id,
+          protocol,
+          kind,
+          query_or_target,
+          progress_current,
+          progress_total,
+          last_update_at,
+          last_error
+        ]
+      properties:
+        state:
+          $ref: '#/components/schemas/AgentActivityState'
+        since:
+          type: string
+          format: date-time
+        job_id:
+          type: string
+          format: uuid
+          nullable: true
+        protocol:
+          allOf:
+            - $ref: '#/components/schemas/Protocol'
+          nullable: true
+        kind:
+          allOf:
+            - $ref: '#/components/schemas/SearchKind'
+          nullable: true
+        query_or_target:
+          type: string
+          nullable: true
+        progress_current:
+          type: integer
+          nullable: true
+        progress_total:
+          type: integer
+          nullable: true
+        last_update_at:
+          type: string
+          format: date-time
+        last_error:
+          type: string
+          nullable: true
     IndexerStats:
       type: object
       required:
@@ -586,7 +642,8 @@ components:
           staging_queue_depth,
           uptime_secs,
           nat,
-          interface_report
+          interface_report,
+          agent_activity
         ]
       properties:
         indexer_id:
@@ -612,6 +669,10 @@ components:
         interface_report:
           allOf:
             - $ref: '#/components/schemas/AgentNetworkReport'
+          nullable: true
+        agent_activity:
+          allOf:
+            - $ref: '#/components/schemas/AgentActivitySnapshot'
           nullable: true
         publish_observability:
           allOf:

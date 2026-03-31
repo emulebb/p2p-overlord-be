@@ -307,6 +307,30 @@ export type NatStatusSnapshot = {
 	last_error: string | null;
 };
 
+export type AgentActivityState =
+	| 'starting'
+	| 'bootstrapping'
+	| 'idle'
+	| 'active_search'
+	| 'passive_harvest_replay'
+	| 'publishing'
+	| 'flushing_snoops'
+	| 'reconfiguring'
+	| 'degraded';
+
+export type AgentActivitySnapshot = {
+	state: AgentActivityState;
+	since: string;
+	job_id: string | null;
+	protocol: Protocol | null;
+	kind: SearchKind | null;
+	query_or_target: string | null;
+	progress_current: number | null;
+	progress_total: number | null;
+	last_update_at: string;
+	last_error: string | null;
+};
+
 export type PublishSeedSource = 'coordinator' | 'synthetic_fallback' | 'manual_api';
 
 export type PublishBatchSummary = {
@@ -405,6 +429,7 @@ export type AgentInterfacesView = {
 	report: AgentNetworkReport | null;
 	config: AgentNetworkingConfig;
 	nat: NatStatusSnapshot | null;
+	agent_activity: AgentActivitySnapshot | null;
 	publish_observability: KadPublishObservability | null;
 	harvest_observability: KadHarvestObservability | null;
 	last_error: string | null;
@@ -420,6 +445,7 @@ export type IndexerStats = {
 	uptime_secs: number;
 	nat: NatStatusSnapshot | null;
 	interface_report: AgentNetworkReport | null;
+	agent_activity: AgentActivitySnapshot | null;
 	publish_observability: KadPublishObservability | null;
 	harvest_observability: KadHarvestObservability | null;
 };

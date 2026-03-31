@@ -1,4 +1,5 @@
 import type {
+	AgentActivitySnapshot,
 	AgentControlConfig,
 	AgentEd2kConfig,
 	AgentKadConfig,
@@ -40,6 +41,7 @@ type CoordinatorState = {
 	agentInterfaceReports: Map<string, AgentNetworkReport | null>;
 	agentNetworkingConfigs: Map<string, AgentNetworkingConfig>;
 	agentNatStatuses: Map<string, NatStatusSnapshot | null>;
+	agentActivities: Map<string, AgentActivitySnapshot | null>;
 	agentPublishObservability: Map<string, KadPublishObservability | null>;
 	agentHarvestObservability: Map<string, KadHarvestObservability | null>;
 	agentInterfaceErrors: Map<string, string | null>;
@@ -60,6 +62,7 @@ function createState(): CoordinatorState {
 		agentInterfaceReports: new Map(),
 		agentNetworkingConfigs: new Map(),
 		agentNatStatuses: new Map(),
+		agentActivities: new Map(),
 		agentPublishObservability: new Map(),
 		agentHarvestObservability: new Map(),
 		agentInterfaceErrors: new Map(),
@@ -82,6 +85,14 @@ function getAgentPublishObservabilityStore(): Map<string, KadPublishObservabilit
 	return coordinatorState.agentPublishObservability;
 }
 
+function getAgentActivityStore(): Map<string, AgentActivitySnapshot | null> {
+	// Older hot-reloaded coordinator state objects may not have this map yet.
+	if (!coordinatorState.agentActivities) {
+		coordinatorState.agentActivities = new Map();
+	}
+	return coordinatorState.agentActivities;
+}
+
 function getAgentHarvestObservabilityStore(): Map<string, KadHarvestObservability | null> {
 	// Older hot-reloaded coordinator state objects may not have this map yet.
 	if (!coordinatorState.agentHarvestObservability) {
@@ -100,6 +111,7 @@ export function registerIndexer(payload: RegisterRequest): IndexerRegistration {
 		coordinatorState.agentNetworkingConfigs.get(payload.indexer_id) ?? createEmptyConfig();
 	const existingReport = coordinatorState.agentInterfaceReports.get(payload.indexer_id) ?? null;
 	const existingNatStatus = coordinatorState.agentNatStatuses.get(payload.indexer_id) ?? null;
+	const existingActivity = getAgentActivityStore().get(payload.indexer_id) ?? null;
 	const existingPublishObservability =
 		getAgentPublishObservabilityStore().get(payload.indexer_id) ?? null;
 	const existingHarvestObservability =
@@ -109,6 +121,7 @@ export function registerIndexer(payload: RegisterRequest): IndexerRegistration {
 	coordinatorState.agentNetworkingConfigs.set(payload.indexer_id, existingConfig);
 	coordinatorState.agentInterfaceReports.set(payload.indexer_id, existingReport);
 	coordinatorState.agentNatStatuses.set(payload.indexer_id, existingNatStatus);
+	getAgentActivityStore().set(payload.indexer_id, existingActivity);
 	getAgentPublishObservabilityStore().set(
 		payload.indexer_id,
 		existingPublishObservability
@@ -225,6 +238,13 @@ export function storeAgentPublishObservability(
 	getAgentPublishObservabilityStore().set(indexerId, observability);
 }
 
+export function storeAgentActivity(
+	indexerId: string,
+	activity: AgentActivitySnapshot | null
+): void {
+	getAgentActivityStore().set(indexerId, activity);
+}
+
 export function storeAgentHarvestObservability(
 	indexerId: string,
 	observability: KadHarvestObservability | null
@@ -281,6 +301,10 @@ export function getAgentPublishObservability(indexerId: string): KadPublishObser
 	return getAgentPublishObservabilityStore().get(indexerId) ?? null;
 }
 
+export function getAgentActivity(indexerId: string): AgentActivitySnapshot | null {
+	return getAgentActivityStore().get(indexerId) ?? null;
+}
+
 export function getAgentHarvestObservability(indexerId: string): KadHarvestObservability | null {
 	return getAgentHarvestObservabilityStore().get(indexerId) ?? null;
 }
@@ -295,6 +319,7 @@ export function listAgentDashboard() {
 		report: getAgentInterfaceReport(registration.indexer_id),
 		config: getAgentNetworkingConfig(registration.indexer_id),
 		nat: getAgentNatStatus(registration.indexer_id),
+		agent_activity: getAgentActivity(registration.indexer_id),
 		publish_observability: getAgentPublishObservability(registration.indexer_id),
 		harvest_observability: getAgentHarvestObservability(registration.indexer_id),
 		last_error: getAgentInterfaceError(registration.indexer_id)

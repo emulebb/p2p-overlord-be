@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type {
+		AgentActivitySnapshot,
 		AgentInterfacesView,
 		InterfaceBindingSelection,
 		InterfaceSelectionState,
@@ -17,8 +18,11 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import {
 		desiredNatBackend,
+		formatAgentActivityProgress,
+		formatAgentActivityState,
 		formatHarvestFamily,
 		formatDemandDetails,
+		formatDurationSince,
 		formatPassiveReplay,
 		formatPublishBatch,
 		formatSeedSource,
@@ -166,6 +170,29 @@
 			return 'gateway ready';
 		}
 		return 'discovering';
+	}
+
+	function activityTone(activity: AgentActivitySnapshot | null): BadgeTone {
+		if (!activity) {
+			return 'neutral';
+		}
+
+		switch (activity.state) {
+			case 'degraded':
+				return 'danger';
+			case 'idle':
+				return 'neutral';
+			case 'bootstrapping':
+			case 'reconfiguring':
+				return 'warn';
+			case 'active_search':
+			case 'passive_harvest_replay':
+			case 'publishing':
+			case 'flushing_snoops':
+			case 'starting':
+			default:
+				return 'accent';
+		}
 	}
 
 	function publishTone(observability: KadPublishObservability | null): BadgeTone {
@@ -553,7 +580,7 @@
 
 		<Panel
 			title="Agent Networking"
-			subtitle="Per-agent readiness, interface selection, NAT posture, and publish observability in one place."
+			subtitle="Per-agent activity, readiness, NAT posture, and Kad publish/harvest observability in one place."
 		>
 			<div class="stack" id="agent-networking">
 				{#if data.agents.length > 0}
@@ -567,6 +594,10 @@
 												{agent.registration.protocol} · {agent.registration.hostname}
 											</strong>
 											<StatusBadge tone={agentTone(agent)} text={agentStatus(agent)} />
+											<StatusBadge
+												tone={activityTone(agent.agent_activity)}
+												text={`activity ${formatAgentActivityState(agent.agent_activity)}`}
+											/>
 											<StatusBadge
 												tone={publishTone(agent.publish_observability)}
 												text={agent.publish_observability ? 'publish telemetry' : 'telemetry pending'}
@@ -589,6 +620,32 @@
 								</div>
 
 								<div class="subgrid">
+									<section class="subpanel">
+										<h4>Activity</h4>
+										<dl class="kv-list">
+											<div class="kv-row">
+												<dt>State</dt>
+												<dd>{formatAgentActivityState(agent.agent_activity)}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Since</dt>
+												<dd>{formatDurationSince(agent.agent_activity?.since ?? null)}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Target / query</dt>
+												<dd>{agent.agent_activity?.query_or_target ?? 'Pending'}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Progress</dt>
+												<dd>{formatAgentActivityProgress(agent.agent_activity)}</dd>
+											</div>
+											<div class="kv-row">
+												<dt>Last update</dt>
+												<dd>{formatTimestamp(agent.agent_activity?.last_update_at ?? null)}</dd>
+											</div>
+										</dl>
+									</section>
+
 									<section class="subpanel">
 										<h4>Control</h4>
 										<dl class="kv-list">
@@ -644,8 +701,10 @@
 									</section>
 								</div>
 
-								{#if agent.last_error}
-									<p class="message message--danger">{agent.last_error}</p>
+								{#if agent.last_error ?? agent.agent_activity?.last_error}
+									<p class="message message--danger">
+										{agent.agent_activity?.last_error ?? agent.last_error}
+									</p>
 								{/if}
 
 								<section class="subpanel">
