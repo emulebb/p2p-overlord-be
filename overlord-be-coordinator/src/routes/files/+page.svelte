@@ -1,8 +1,9 @@
 <script lang="ts">
+	import Ed2kCopyButton from '$lib/components/Ed2kCopyButton.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import type { IndexedFileListResponse, IndexedFileSort } from '$lib/shared/internal-api';
-	import { formatBytes, formatCompactTimestamp } from '$lib/ui/formatters';
+	import { buildEd2kLink, formatBytes, formatCompactTimestamp, primaryHashValue } from '$lib/ui/formatters';
 
 	type ShellStatus = {
 		registered_agents: number;
@@ -117,24 +118,24 @@
 <main class="page">
 	<section class="page-header">
 		<div>
-			<p class="eyebrow">Browse</p>
+			<p class="eyebrow">Index Browse</p>
 			<h2>Indexed files</h2>
 			<p>
-				Search and inspect the coordinator’s persisted file index without launching a live network
-				search.
+				Query the coordinator-local index, inspect promoted file records, and lift eD2k links
+				directly into eMule without launching a live search.
 			</p>
 		</div>
 		<div class="badge-row">
 			<StatusBadge tone="good" text={`${data.shellStatus.file_count} indexed`} />
-			<StatusBadge tone={response.query ? 'accent' : 'neutral'} text={response.query ? 'fts active' : 'browse all'} />
-			<StatusBadge tone={loading ? 'warn' : 'neutral'} text={loading ? 'loading' : `${response.total} matches`} />
+			<StatusBadge tone={response.query ? 'accent' : 'neutral'} text={response.query ? 'fts:on' : 'fts:off'} />
+			<StatusBadge tone={loading ? 'warn' : 'neutral'} text={loading ? 'syncing' : `${response.total} rows`} />
 		</div>
 	</section>
 
 	<section class="split-grid">
 		<Panel
-			title="Browse Controls"
-			subtitle="This screen searches only the coordinator index. Use Quick Search for live agent fan-out."
+			title="Query Control"
+			subtitle="Coordinator-local browse only. Use Quick Search when you need live agent fan-out."
 		>
 			<div class="stack">
 				<form class="inline-form" method="GET" action="/files" on:submit|preventDefault={submitSearch}>
@@ -174,8 +175,8 @@
 		</Panel>
 
 		<Panel
-			title="Browse Status"
-			subtitle="Quick operator context for the current indexed-files result set."
+			title="Index Window"
+			subtitle="Compact operator context for the current browse slice."
 		>
 			<div class="stack">
 				<dl class="meta-list">
@@ -216,7 +217,7 @@
 
 	<Panel
 		title="Indexed Results"
-		subtitle="Expand any file inline to inspect every stored name, hash, tag, and source."
+		subtitle="Compact file rows with direct eD2k copy and inline record expansion."
 	>
 		{#if response.items.length === 0}
 			<p class="message message--accent">
@@ -227,101 +228,136 @@
 				{/if}
 			</p>
 		{:else}
-			<div class="result-list indexed-file-list">
-				{#each response.items as file}
-					<article class="result-card">
-						<div class="result-card__header">
-							<div>
-								<div class="result-card__title-row">
-									<strong class="result-card__title">{file.primary_name}</strong>
-									{#if file.content_type}
-										<StatusBadge tone="accent" text={file.content_type} />
-									{/if}
-								</div>
-								<p class="mono">file #{file.file_id}</p>
-							</div>
-							<div class="badge-row">
-								<StatusBadge tone="neutral" text={formatBytes(file.size)} />
-								<StatusBadge tone="neutral" text={`${file.source_count} sources`} />
-								<StatusBadge tone="neutral" text={`${file.search_job_count} searches`} />
-								<StatusBadge tone="neutral" text={`${file.hashes.length} hashes`} />
-							</div>
-						</div>
+			<div class="table-shell wm-shell">
+				<table class="wm-table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Size</th>
+							<th>ED2K</th>
+							<th>Sources</th>
+							<th>Searches</th>
+							<th>Last seen</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each response.items as file}
+							<tr class="hover:bg-[#f4f8fb]">
+								<td>
+									<div class="flex flex-col gap-1">
+										<div class="flex flex-wrap items-center gap-2">
+											<strong>{file.primary_name}</strong>
+											{#if file.content_type}
+												<StatusBadge tone="accent" text={file.content_type} />
+											{/if}
+										</div>
+										<span class="mono text-[11px] text-[#5b6772]">file #{file.file_id}</span>
+									</div>
+								</td>
+								<td class="mono">{formatBytes(file.size)}</td>
+								<td>
+									<div class="flex max-w-[24rem] flex-col gap-1">
+										<span class="mono break-all">{primaryHashValue(file)}</span>
+										<span class="text-[11px] text-[#5b6772]">{file.hashes.length} hashes / {file.names.length} names</span>
+									</div>
+								</td>
+								<td class="mono">{file.source_count}</td>
+								<td class="mono">{file.search_job_count}</td>
+								<td class="mono">{formatCompactTimestamp(file.last_seen)}</td>
+								<td>
+									<div class="flex items-center gap-2">
+										<Ed2kCopyButton file={file} />
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="7" class="bg-[#f8fbfd]">
+									<details class="inline-details">
+										<summary>Inspect indexed record</summary>
 
-						<dl class="meta-list">
-							<div class="meta-row">
-								<dt>First seen</dt>
-								<dd><strong>{formatCompactTimestamp(file.first_seen)}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Last seen</dt>
-								<dd><strong>{formatCompactTimestamp(file.last_seen)}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Names</dt>
-								<dd><strong>{file.names.length}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Search jobs</dt>
-								<dd><strong>{file.search_job_count}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Tags</dt>
-								<dd><strong>{file.tags.length}</strong></dd>
-							</div>
-						</dl>
+										<div class="detail-grid">
+											<section class="subpanel">
+												<h4>eD2k link</h4>
+												{#if buildEd2kLink(file)}
+													<p class="mono detail-copy-preview">{buildEd2kLink(file)}</p>
+												{:else}
+													<p class="muted">No copyable link yet. This record needs both size and eD2k hash.</p>
+												{/if}
+											</section>
 
-						<details class="inline-details">
-							<summary>Inspect full indexed record</summary>
+											<section class="subpanel">
+												<h4>Times</h4>
+												<dl class="meta-list">
+													<div class="meta-row">
+														<dt>First seen</dt>
+														<dd><strong>{formatCompactTimestamp(file.first_seen)}</strong></dd>
+													</div>
+													<div class="meta-row">
+														<dt>Last seen</dt>
+														<dd><strong>{formatCompactTimestamp(file.last_seen)}</strong></dd>
+													</div>
+													<div class="meta-row">
+														<dt>Tags</dt>
+														<dd><strong>{file.tags.length}</strong></dd>
+													</div>
+												</dl>
+											</section>
 
-							<div class="detail-grid">
-								<section class="subpanel">
-									<h4>Names</h4>
-									<ul class="detail-list">
-										{#each file.names as name}
-											<li>{name}</li>
-										{/each}
-									</ul>
-								</section>
+											<section class="subpanel">
+												<h4>Names</h4>
+												{#if file.names.length === 0}
+													<p class="muted">No alternate names stored.</p>
+												{:else}
+													<ul class="detail-list">
+														{#each file.names as name}
+															<li>{name}</li>
+														{/each}
+													</ul>
+												{/if}
+											</section>
 
-								<section class="subpanel">
-									<h4>Hashes</h4>
-									<ul class="detail-list mono">
-										{#each file.hashes as hash}
-											<li>{hash.kind}: {hash.value}</li>
-										{/each}
-									</ul>
-								</section>
+											<section class="subpanel">
+												<h4>Hashes</h4>
+												<ul class="detail-list mono">
+													{#each file.hashes as hash}
+														<li>{hash.kind}: {hash.value}</li>
+													{/each}
+												</ul>
+											</section>
 
-								<section class="subpanel">
-									<h4>Tags</h4>
-									{#if file.tags.length === 0}
-										<p class="muted">No tags stored.</p>
-									{:else}
-										<ul class="detail-list mono">
-											{#each file.tags as tag}
-												<li>{tag.key}: {JSON.stringify(tag.value)}</li>
-											{/each}
-										</ul>
-									{/if}
-								</section>
+											<section class="subpanel">
+												<h4>Tags</h4>
+												{#if file.tags.length === 0}
+													<p class="muted">No tags stored.</p>
+												{:else}
+													<ul class="detail-list mono">
+														{#each file.tags as tag}
+															<li>{tag.key}: {JSON.stringify(tag.value)}</li>
+														{/each}
+													</ul>
+												{/if}
+											</section>
 
-								<section class="subpanel">
-									<h4>Sources</h4>
-									{#if file.sources.length === 0}
-										<p class="muted">No sources stored.</p>
-									{:else}
-										<ul class="detail-list mono">
-											{#each file.sources as source}
-												<li>{source.protocol}: {source.address}</li>
-											{/each}
-										</ul>
-									{/if}
-								</section>
-							</div>
-						</details>
-					</article>
-				{/each}
+											<section class="subpanel">
+												<h4>Sources</h4>
+												{#if file.sources.length === 0}
+													<p class="muted">No sources stored.</p>
+												{:else}
+													<ul class="detail-list mono">
+														{#each file.sources as source}
+															<li>{source.protocol}: {source.address}</li>
+														{/each}
+													</ul>
+												{/if}
+											</section>
+										</div>
+									</details>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		{/if}
 	</Panel>

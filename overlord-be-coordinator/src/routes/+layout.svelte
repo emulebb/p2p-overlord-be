@@ -1,4 +1,5 @@
 <script lang="ts">
+	import 'uno.css';
 	import '../app.css';
 
 	import { page } from '$app/stores';

@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	import Ed2kCopyButton from '$lib/components/Ed2kCopyButton.svelte';
 	import Panel from '$lib/components/Panel.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import type { FileRecord, SearchJobStatusView } from '$lib/shared/internal-api';
 	import {
+		buildEd2kLink,
 		formatBytes,
 		formatTimestamp,
 		primaryFileName,
@@ -252,42 +254,40 @@
 		subtitle="Per-agent dispatch progress, batch flow, and error visibility."
 	>
 		{#if job.dispatches.length > 0}
-			<div class="dispatch-grid">
-				{#each job.dispatches as dispatch}
-					<article class="dispatch-card">
-						<div class="dispatch-card__header">
-							<div>
-								<strong class="dispatch-card__title">{shortIndexerId(dispatch.indexer_id)}</strong>
-								<p class="mono">{dispatch.indexer_id}</p>
-							</div>
-							<StatusBadge tone={dispatchTone(dispatch.status)} text={dispatch.status} />
-						</div>
-
-						<div class="dispatch-card__meta">
-							<StatusBadge tone="neutral" text={`${dispatch.result_count} results`} />
-							<StatusBadge tone="neutral" text={`${dispatch.batch_count} batches`} />
-						</div>
-
-						<dl class="meta-list">
-							<div class="meta-row">
-								<dt>Queued</dt>
-								<dd><strong>{formatTimestamp(dispatch.created_at)}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Started</dt>
-								<dd><strong>{formatTimestamp(dispatch.started_at)}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Finished</dt>
-								<dd><strong>{formatTimestamp(dispatch.finished_at)}</strong></dd>
-							</div>
-						</dl>
-
-						{#if dispatch.last_error}
-							<p class="message message--danger">{dispatch.last_error}</p>
-						{/if}
-					</article>
-				{/each}
+			<div class="table-shell wm-shell">
+				<table class="wm-table">
+					<thead>
+						<tr>
+							<th>Indexer</th>
+							<th>Status</th>
+							<th>Results</th>
+							<th>Batches</th>
+							<th>Queued</th>
+							<th>Started</th>
+							<th>Finished</th>
+							<th>Last error</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each job.dispatches as dispatch}
+							<tr class="hover:bg-[#f4f8fb]">
+								<td>
+									<div class="flex flex-col gap-1">
+										<strong>{shortIndexerId(dispatch.indexer_id)}</strong>
+										<span class="mono text-[11px] text-[#5b6772] break-all">{dispatch.indexer_id}</span>
+									</div>
+								</td>
+								<td><StatusBadge tone={dispatchTone(dispatch.status)} text={dispatch.status} /></td>
+								<td class="mono">{dispatch.result_count}</td>
+								<td class="mono">{dispatch.batch_count}</td>
+								<td class="mono">{formatTimestamp(dispatch.created_at)}</td>
+								<td class="mono">{formatTimestamp(dispatch.started_at)}</td>
+								<td class="mono">{formatTimestamp(dispatch.finished_at)}</td>
+								<td>{dispatch.last_error ?? 'none'}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		{:else}
 			<p class="message message--accent">No dispatches recorded for this job yet.</p>
@@ -296,53 +296,117 @@
 
 	<Panel
 		title="Results"
-		subtitle="Incoming files surface here as the SSE stream appends results and job snapshots update."
+		subtitle="Incoming files land here as compact operator rows while SSE appends snapshots and new hits."
 	>
 		{#if job.results.length === 0}
 			<p class="message message--accent">No results yet. Keep this page open while agents continue searching.</p>
 		{:else}
-			<div class="result-grid">
-				{#each job.results as file}
-					<article class="result-card">
-						<div class="result-card__header">
-							<div>
-								<div class="result-card__title-row">
-									<strong class="result-card__title">{primaryFileName(file)}</strong>
-									{#if file.content_type}
-										<StatusBadge tone="accent" text={file.content_type} />
-									{/if}
-								</div>
-								<p class="mono">{primaryHashValue(file)}</p>
-							</div>
-							<div class="badge-row">
-								<StatusBadge tone="neutral" text={formatBytes(file.size)} />
-								<StatusBadge tone="neutral" text={`${file.sources.length} sources`} />
-							</div>
-						</div>
+			<div class="table-shell wm-shell">
+				<table class="wm-table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Size</th>
+							<th>ED2K</th>
+							<th>Sources</th>
+							<th>Tags</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each job.results as file}
+							<tr class="hover:bg-[#f4f8fb]">
+								<td>
+									<div class="flex flex-col gap-1">
+										<div class="flex flex-wrap items-center gap-2">
+											<strong>{primaryFileName(file)}</strong>
+											{#if file.content_type}
+												<StatusBadge tone="accent" text={file.content_type} />
+											{/if}
+										</div>
+										<span class="mono text-[11px] text-[#5b6772]">{file.names.length} names / {file.hashes.length} hashes</span>
+									</div>
+								</td>
+								<td class="mono">{formatBytes(file.size)}</td>
+								<td class="mono break-all">{primaryHashValue(file)}</td>
+								<td class="mono">{file.sources.length}</td>
+								<td class="mono">{file.tags.length}</td>
+								<td><Ed2kCopyButton file={file} /></td>
+							</tr>
+							<tr>
+								<td colspan="6" class="bg-[#f8fbfd]">
+									<details class="inline-details">
+										<summary>Inspect streamed result</summary>
 
-						<dl class="meta-list">
-							<div class="meta-row">
-								<dt>Names</dt>
-								<dd><strong>{file.names.length}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Hashes</dt>
-								<dd><strong>{file.hashes.length}</strong></dd>
-							</div>
-							<div class="meta-row">
-								<dt>Tags</dt>
-								<dd><strong>{file.tags.length}</strong></dd>
-							</div>
-						</dl>
+										<div class="detail-grid">
+											<section class="subpanel">
+												<h4>eD2k link</h4>
+												{#if buildEd2kLink(file)}
+													<p class="mono detail-copy-preview">{buildEd2kLink(file)}</p>
+												{:else}
+													<p class="muted">No copyable link yet. This result needs both size and eD2k hash.</p>
+												{/if}
+											</section>
 
-						{#if file.sources.length > 0}
-							<div class="subpanel">
-								<h4>First source</h4>
-								<p class="mono">{file.sources[0].address}</p>
-							</div>
-						{/if}
-					</article>
-				{/each}
+											<section class="subpanel">
+												<h4>First source</h4>
+												{#if file.sources.length > 0}
+													<p class="mono">{file.sources[0].address}</p>
+												{:else}
+													<p class="muted">No source data attached yet.</p>
+												{/if}
+											</section>
+
+											<section class="subpanel">
+												<h4>Names</h4>
+												<ul class="detail-list">
+													{#each file.names as name}
+														<li>{name}</li>
+													{/each}
+												</ul>
+											</section>
+
+											<section class="subpanel">
+												<h4>Hashes</h4>
+												<ul class="detail-list mono">
+													{#each file.hashes as hash}
+														<li>{hash.kind}: {hash.value}</li>
+													{/each}
+												</ul>
+											</section>
+
+											<section class="subpanel">
+												<h4>Tags</h4>
+												{#if file.tags.length === 0}
+													<p class="muted">No tags stored.</p>
+												{:else}
+													<ul class="detail-list mono">
+														{#each file.tags as tag}
+															<li>{tag.key}: {JSON.stringify(tag.value)}</li>
+														{/each}
+													</ul>
+												{/if}
+											</section>
+
+											<section class="subpanel">
+												<h4>Sources</h4>
+												{#if file.sources.length === 0}
+													<p class="muted">No sources stored.</p>
+												{:else}
+													<ul class="detail-list mono">
+														{#each file.sources as source}
+															<li>{source.protocol}: {source.address}</li>
+														{/each}
+													</ul>
+												{/if}
+											</section>
+										</div>
+									</details>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		{/if}
 	</Panel>

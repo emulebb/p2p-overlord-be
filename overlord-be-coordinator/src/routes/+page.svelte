@@ -15,7 +15,6 @@
 
 	import Panel from '$lib/components/Panel.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
-	import SummaryCard from '$lib/components/SummaryCard.svelte';
 	import {
 		desiredNatBackend,
 		formatHarvestFamily,
@@ -262,31 +261,44 @@
 	</section>
 
 	{#if data}
-		<section class="summary-grid" aria-label="Coordinator summary">
-			<SummaryCard
-				label="Registered Agents"
-				value={data.shellStatus.registered_agents}
-				hint="Known agent registrations in the coordinator."
-				tone="accent"
-			/>
-			<SummaryCard
-				label="Indexed Files"
-				value={data.shellStatus.file_count}
-				hint="Promoted file rows available for browse and search flows at /files."
-				tone="good"
-			/>
-			<SummaryCard
-				label="Search Jobs"
-				value={data.shellStatus.search_jobs}
-				hint="Persisted jobs across queued, active, and completed searches."
-				tone="warn"
-			/>
-			<SummaryCard
-				label="Search Results"
-				value={data.shellStatus.search_results}
-				hint={`${data.shellStatus.result_batches} result batches observed by the coordinator.`}
-			/>
-		</section>
+		<Panel
+			title="System Counters"
+			subtitle="Compact coordinator counters in a single operator table."
+		>
+			<div class="table-shell wm-shell">
+				<table class="wm-table">
+					<thead>
+						<tr>
+							<th>Metric</th>
+							<th>Value</th>
+							<th>Notes</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Registered agents</td>
+							<td class="mono">{data.shellStatus.registered_agents}</td>
+							<td>Known agent registrations in the coordinator.</td>
+						</tr>
+						<tr>
+							<td>Indexed files</td>
+							<td class="mono">{data.shellStatus.file_count}</td>
+							<td>Promoted file rows available for browse and search flows at `/files`.</td>
+						</tr>
+						<tr>
+							<td>Search jobs</td>
+							<td class="mono">{data.shellStatus.search_jobs}</td>
+							<td>Persisted jobs across queued, active, and completed searches.</td>
+						</tr>
+						<tr>
+							<td>Search results</td>
+							<td class="mono">{data.shellStatus.search_results}</td>
+							<td>{data.shellStatus.result_batches} result batches observed by the coordinator.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</Panel>
 
 		<section class="split-grid">
 			<Panel
@@ -332,23 +344,36 @@
 					{/if}
 
 					{#if data.searches.length > 0}
-						<div class="recent-list">
-							{#each data.searches as search}
-								<div class="list-row">
-									<div>
-										<div class="badge-row">
-											<StatusBadge
-												tone={search.status === 'completed' ? 'good' : search.status === 'failed' ? 'danger' : 'accent'}
-												text={search.status}
-											/>
-											<StatusBadge tone="neutral" text={`${search.result_count} results`} />
-										</div>
-										<strong>{search.query ?? search.job_id}</strong>
-										<p>Created {formatTimestamp(search.created_at)}</p>
-									</div>
-									<a class="text-link" href={`/search/${search.job_id}`}>Open live job</a>
-								</div>
-							{/each}
+						<div class="table-shell wm-shell">
+							<table class="wm-table">
+								<thead>
+									<tr>
+										<th>Query</th>
+										<th>Protocol</th>
+										<th>Status</th>
+										<th>Results</th>
+										<th>Created</th>
+										<th>Open</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each data.searches as search}
+										<tr>
+											<td>{search.query ?? search.job_id}</td>
+											<td><StatusBadge tone="neutral" text={search.protocol} /></td>
+											<td>
+												<StatusBadge
+													tone={search.status === 'completed' ? 'good' : search.status === 'failed' ? 'danger' : 'accent'}
+													text={search.status}
+												/>
+											</td>
+											<td class="mono">{search.result_count}</td>
+											<td class="mono">{formatTimestamp(search.created_at)}</td>
+											<td><a class="text-link" href={`/search/${search.job_id}`}>Open</a></td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 						</div>
 					{:else}
 						<p class="message message--accent">No recent jobs yet. Start a search to seed the dashboard.</p>

@@ -153,3 +153,16 @@ export function primaryFileName(file: FileRecord): string {
 export function primaryHashValue(file: FileRecord): string {
 	return file.hashes[0]?.value ?? 'unknown hash';
 }
+
+/**
+ * Builds an eD2k link that can be pasted directly into eMule when the coordinator has the
+ * minimum required tuple: primary name, size, and eD2k hash.
+ */
+export function buildEd2kLink(file: FileRecord): string | null {
+	const ed2kHash = file.hashes.find((hash) => hash.kind === 'ed2k')?.value ?? null;
+	if (!ed2kHash || file.size === null || file.size <= 0) {
+		return null;
+	}
+
+	return `ed2k://|file|${encodeURIComponent(primaryFileName(file))}|${file.size}|${ed2kHash}|/`;
+}
