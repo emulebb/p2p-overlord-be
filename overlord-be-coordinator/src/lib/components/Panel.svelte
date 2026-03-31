@@ -4,9 +4,9 @@
 	export let padded = true;
 </script>
 
-<section class:panel--padded={padded} class="panel">
+<section class:panel--padded={padded} class="panel wm-shell">
 	{#if title || subtitle || $$slots.actions}
-		<header class="panel__header">
+		<header class="panel__header wm-titlebar">
 			<div class="panel__heading">
 				{#if title}
 					<h3>{title}</h3>

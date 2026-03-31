@@ -79,7 +79,7 @@
 </script>
 
 <button
-	class={`copy-chip ${copied ? 'copy-chip--good' : ''} ${copyFailed ? 'copy-chip--danger' : ''}`}
+	class={`copy-chip wm-button ${copied ? 'copy-chip--good' : ''} ${copyFailed ? 'copy-chip--danger' : ''}`}
 	type="button"
 	disabled={!ed2kLink}
 	on:click={copyEd2kLink}

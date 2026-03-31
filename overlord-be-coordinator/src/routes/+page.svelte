@@ -429,8 +429,8 @@
 			subtitle="Auto-refreshes every 10 seconds from the persisted snoop queue so you can see what the network is asking for."
 		>
 			{#if snoops.length > 0}
-				<div class="table-shell">
-					<table class="data-table">
+				<div class="table-shell wm-shell">
+					<table class="wm-table">
 						<thead>
 							<tr>
 								<th>Seen</th>
@@ -475,8 +475,8 @@
 				subtitle="Append-only harvested observations over the last 24 hours, ranked by repeated request shape."
 			>
 				{#if trending.length > 0}
-					<div class="table-shell">
-						<table class="data-table">
+					<div class="table-shell wm-shell">
+						<table class="wm-table">
 							<thead>
 								<tr>
 									<th>Last Seen</th>
@@ -515,8 +515,8 @@
 				subtitle="Harvested shapes that are being replayed but still have not yielded any linked files."
 			>
 				{#if holes.length > 0}
-					<div class="table-shell">
-						<table class="data-table">
+					<div class="table-shell wm-shell">
+						<table class="wm-table">
 							<thead>
 								<tr>
 									<th>Last Seen</th>
@@ -559,7 +559,7 @@
 				{#if data.agents.length > 0}
 					<div class="agent-grid">
 						{#each data.agents as agent}
-							<article class="agent-card">
+							<article class="agent-card wm-shell">
 								<div class="agent-card__header">
 									<div>
 										<div class="agent-card__title-row">

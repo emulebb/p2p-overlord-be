@@ -3,4 +3,4 @@
 	export let text: string;
 </script>
 
-<span class={`status-badge status-badge--${tone}`}>{text}</span>
+<span class={`status-badge wm-chip status-badge--${tone}`}>{text}</span>
