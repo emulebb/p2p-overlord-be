@@ -39,8 +39,12 @@ function readDatabaseUrlFromEnvFile(): string | null {
 	return null;
 }
 
+/**
+ * Resolves the coordinator database URL, preferring the repo-local `.env` written by the
+ * managed DB helper over any unrelated shell-level `DATABASE_URL`.
+ */
 function getDatabaseUrl(): string {
-	const connectionString = process.env.DATABASE_URL?.trim() || readDatabaseUrlFromEnvFile();
+	const connectionString = readDatabaseUrlFromEnvFile() ?? process.env.DATABASE_URL?.trim();
 	if (!connectionString) {
 		throw new Error('DATABASE_URL is not set');
 	}
