@@ -17,8 +17,12 @@ CREATE TABLE file_names (
     file_id BIGINT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    name_tsv TSVECTOR GENERATED ALWAYS AS (to_tsvector('english', name)) STORED,
     UNIQUE (file_id, name)
 );
+
+CREATE INDEX file_names_name_tsv_idx ON file_names USING GIN (name_tsv);
+CREATE INDEX file_names_file_id_idx ON file_names(file_id);
 
 CREATE TABLE file_tags (
     id BIGSERIAL PRIMARY KEY,
@@ -32,9 +36,11 @@ CREATE TABLE sources (
     file_id BIGINT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
     protocol TEXT NOT NULL,
     address TEXT NOT NULL,
-    extra JSONB NOT NULL DEFAULT '{}'::jsonb,
+    extra JSONB NOT NULL,
     seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX sources_file_id_idx ON sources(file_id);
 
 CREATE TABLE search_jobs (
     id TEXT PRIMARY KEY,
@@ -43,6 +49,8 @@ CREATE TABLE search_jobs (
     query TEXT NULL,
     file_hash JSONB NULL,
     file_size BIGINT NULL,
+    origin TEXT NOT NULL DEFAULT 'user_api',
+    origin_key TEXT NULL,
     status TEXT NOT NULL,
     result_count INTEGER NOT NULL DEFAULT 0,
     last_error TEXT NULL,
@@ -51,6 +59,9 @@ CREATE TABLE search_jobs (
     finished_at TIMESTAMPTZ NULL,
     cancel_requested_at TIMESTAMPTZ NULL
 );
+
+CREATE INDEX search_jobs_origin_created_at_idx ON search_jobs(origin, created_at);
+CREATE INDEX search_jobs_origin_key_idx ON search_jobs(origin_key);
 
 CREATE TABLE search_dispatches (
     id BIGSERIAL PRIMARY KEY,
@@ -75,11 +86,14 @@ CREATE TABLE search_results (
     PRIMARY KEY (job_id, file_id)
 );
 
+CREATE INDEX search_results_file_id_idx ON search_results(file_id);
+
 CREATE TABLE snoop_entries (
     indexer_id TEXT NOT NULL,
     logical_key TEXT NOT NULL,
     family TEXT NOT NULL,
     target TEXT NOT NULL,
+    request_shape JSONB NULL,
     start_position INTEGER NULL,
     size BIGINT NULL,
     restrictive_payload_hex TEXT NULL,
@@ -96,6 +110,7 @@ CREATE TABLE snoop_log (
     family TEXT NOT NULL,
     logical_key TEXT NOT NULL,
     target TEXT NOT NULL,
+    request_shape JSONB NULL,
     start_position INTEGER NULL,
     size BIGINT NULL,
     restrictive_payload_hex TEXT NULL,
@@ -112,6 +127,7 @@ CREATE TABLE harvest_replays (
     family TEXT NOT NULL,
     logical_key TEXT NOT NULL,
     target TEXT NOT NULL,
+    request_shape JSONB NULL,
     start_position INTEGER NULL,
     size BIGINT NULL,
     restrictive_payload_hex TEXT NULL,
@@ -132,6 +148,30 @@ CREATE TABLE harvest_replay_files (
 );
 
 CREATE INDEX harvest_replay_files_file_id_idx ON harvest_replay_files(file_id);
+
+CREATE TABLE keep_busy_candidates (
+    query_key TEXT PRIMARY KEY,
+    query TEXT NOT NULL,
+    raw_title TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    source_label TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    source_weight INTEGER NOT NULL,
+    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    seen_count INTEGER NOT NULL DEFAULT 1,
+    dispatch_count INTEGER NOT NULL DEFAULT 0,
+    success_count INTEGER NOT NULL DEFAULT 0,
+    zero_result_count INTEGER NOT NULL DEFAULT 0,
+    last_result_count INTEGER NOT NULL DEFAULT 0,
+    last_dispatched_at TIMESTAMPTZ NULL,
+    last_completed_at TIMESTAMPTZ NULL,
+    cooldown_until TIMESTAMPTZ NULL,
+    last_error TEXT NULL
+);
+
+CREATE INDEX keep_busy_candidates_cooldown_until_idx ON keep_busy_candidates(cooldown_until);
+CREATE INDEX keep_busy_candidates_last_seen_at_idx ON keep_busy_candidates(last_seen_at);
 
 CREATE TABLE stats_samples (
     id BIGSERIAL PRIMARY KEY,

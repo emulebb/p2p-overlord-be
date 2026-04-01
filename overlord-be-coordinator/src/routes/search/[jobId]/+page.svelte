@@ -188,6 +188,12 @@
 			<div class="stack">
 				<dl class="meta-list">
 					<div class="meta-row">
+						<dt>Origin</dt>
+						<dd>
+							<strong>{job.origin === 'keep_busy_auto' ? 'keep-busy auto' : 'user API'}</strong>
+						</dd>
+					</div>
+					<div class="meta-row">
 						<dt>Protocol / kind</dt>
 						<dd>
 							<strong>{job.protocol} / {job.kind}</strong>

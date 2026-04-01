@@ -62,6 +62,8 @@ export type IndexedFileListResponse = {
 
 export type SearchKind = 'keyword' | 'source' | 'notes';
 
+export type SearchJobOrigin = 'user_api' | 'keep_busy_auto';
+
 export type SearchJob = {
 	job_id: string;
 	protocol: Protocol;
@@ -69,6 +71,8 @@ export type SearchJob = {
 	query: string | null;
 	file_hash: HashType | null;
 	file_size: number | null;
+	origin: SearchJobOrigin;
+	origin_key: string | null;
 	callback_url: string;
 };
 
@@ -138,6 +142,8 @@ export type SearchJobStatusView = {
 	query: string | null;
 	file_hash: HashType | null;
 	file_size: number | null;
+	origin: SearchJobOrigin;
+	origin_key: string | null;
 	status: SearchJobStatus;
 	created_at: string;
 	started_at: string | null;
@@ -518,6 +524,39 @@ export type SnoopTrendEntry = SnoopDemandEntry & {
 
 export type SnoopDemandHoleEntry = SnoopDemandEntry & {
 	last_error: string | null;
+};
+
+export type KeepBusyCandidateView = {
+	queryKey: string;
+	query: string;
+	rawTitle: string;
+	sourceId: string;
+	sourceLabel: string;
+	sourceUrl: string;
+	sourceWeight: number;
+	firstSeenAt: string;
+	lastSeenAt: string;
+	seenCount: number;
+	dispatchCount: number;
+	successCount: number;
+	zeroResultCount: number;
+	lastResultCount: number;
+	lastDispatchedAt: string | null;
+	lastCompletedAt: string | null;
+	cooldownUntil: string | null;
+	lastError: string | null;
+};
+
+export type KeepBusyWorkerStatus = {
+	enabled: boolean;
+	started: boolean;
+	pollIntervalSecs: number;
+	lastStartedAt: string | null;
+	lastCompletedAt: string | null;
+	lastError: string | null;
+	lastSourcesFetched: number;
+	lastCandidatesSeen: number;
+	lastJobsDispatched: number;
 };
 
 export type PopularHash = {

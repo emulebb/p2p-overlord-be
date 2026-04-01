@@ -12,7 +12,9 @@ import type {
 	KadHarvestObservability,
 	KadPublishObservability,
 	FileRecord,
+	IndexerStats,
 	IndexerRegistration,
+	KeepBusyWorkerStatus,
 	NatStatusSnapshot,
 	PopularHash,
 	RegisterRequest,
@@ -41,6 +43,7 @@ type CoordinatorState = {
 	agentInterfaceReports: Map<string, AgentNetworkReport | null>;
 	agentNetworkingConfigs: Map<string, AgentNetworkingConfig>;
 	agentNatStatuses: Map<string, NatStatusSnapshot | null>;
+	agentStats: Map<string, IndexerStats | null>;
 	agentActivities: Map<string, AgentActivitySnapshot | null>;
 	agentPublishObservability: Map<string, KadPublishObservability | null>;
 	agentHarvestObservability: Map<string, KadHarvestObservability | null>;
@@ -49,6 +52,7 @@ type CoordinatorState = {
 	filesByHash: Map<string, AggregatedFile>;
 	batches: ResultBatch[];
 	popularHashes: PopularHash[];
+	keepBusyStatus: KeepBusyWorkerStatus;
 };
 
 declare global {
@@ -62,6 +66,7 @@ function createState(): CoordinatorState {
 		agentInterfaceReports: new Map(),
 		agentNetworkingConfigs: new Map(),
 		agentNatStatuses: new Map(),
+		agentStats: new Map(),
 		agentActivities: new Map(),
 		agentPublishObservability: new Map(),
 		agentHarvestObservability: new Map(),
@@ -69,7 +74,18 @@ function createState(): CoordinatorState {
 		searchJobs: new Map(),
 		filesByHash: new Map(),
 		batches: [],
-		popularHashes: []
+		popularHashes: [],
+		keepBusyStatus: {
+			enabled: false,
+			started: false,
+			pollIntervalSecs: 0,
+			lastStartedAt: null,
+			lastCompletedAt: null,
+			lastError: null,
+			lastSourcesFetched: 0,
+			lastCandidatesSeen: 0,
+			lastJobsDispatched: 0
+		}
 	};
 }
 
@@ -111,6 +127,7 @@ export function registerIndexer(payload: RegisterRequest): IndexerRegistration {
 		coordinatorState.agentNetworkingConfigs.get(payload.indexer_id) ?? createEmptyConfig();
 	const existingReport = coordinatorState.agentInterfaceReports.get(payload.indexer_id) ?? null;
 	const existingNatStatus = coordinatorState.agentNatStatuses.get(payload.indexer_id) ?? null;
+	const existingStats = coordinatorState.agentStats.get(payload.indexer_id) ?? null;
 	const existingActivity = getAgentActivityStore().get(payload.indexer_id) ?? null;
 	const existingPublishObservability =
 		getAgentPublishObservabilityStore().get(payload.indexer_id) ?? null;
@@ -121,6 +138,7 @@ export function registerIndexer(payload: RegisterRequest): IndexerRegistration {
 	coordinatorState.agentNetworkingConfigs.set(payload.indexer_id, existingConfig);
 	coordinatorState.agentInterfaceReports.set(payload.indexer_id, existingReport);
 	coordinatorState.agentNatStatuses.set(payload.indexer_id, existingNatStatus);
+	coordinatorState.agentStats.set(payload.indexer_id, existingStats);
 	getAgentActivityStore().set(payload.indexer_id, existingActivity);
 	getAgentPublishObservabilityStore().set(
 		payload.indexer_id,
@@ -297,6 +315,10 @@ export function getAgentNatStatus(indexerId: string): NatStatusSnapshot | null {
 	return coordinatorState.agentNatStatuses.get(indexerId) ?? null;
 }
 
+export function getAgentStats(indexerId: string): IndexerStats | null {
+	return coordinatorState.agentStats.get(indexerId) ?? null;
+}
+
 export function getAgentPublishObservability(indexerId: string): KadPublishObservability | null {
 	return getAgentPublishObservabilityStore().get(indexerId) ?? null;
 }
@@ -317,6 +339,7 @@ export function listAgentDashboard() {
 	return Array.from(coordinatorState.registrations.values()).map((registration) => ({
 		registration,
 		report: getAgentInterfaceReport(registration.indexer_id),
+		stats: getAgentStats(registration.indexer_id),
 		config: getAgentNetworkingConfig(registration.indexer_id),
 		nat: getAgentNatStatus(registration.indexer_id),
 		agent_activity: getAgentActivity(registration.indexer_id),
@@ -331,7 +354,8 @@ export function snapshotStatus() {
 		registered_agents: coordinatorState.registrations.size,
 		search_jobs: coordinatorState.searchJobs.size,
 		file_count: coordinatorState.filesByHash.size,
-		result_batches: coordinatorState.batches.length
+		result_batches: coordinatorState.batches.length,
+		keepBusy: coordinatorState.keepBusyStatus
 	};
 }
 
@@ -341,6 +365,18 @@ export function listFiles(): AggregatedFile[] {
 
 export function getPopularHashes(): PopularHash[] {
 	return coordinatorState.popularHashes;
+}
+
+export function getKeepBusyStatus(): KeepBusyWorkerStatus {
+	return coordinatorState.keepBusyStatus;
+}
+
+export function storeKeepBusyStatus(status: KeepBusyWorkerStatus): void {
+	coordinatorState.keepBusyStatus = status;
+}
+
+export function storeAgentStats(indexerId: string, stats: IndexerStats | null): void {
+	coordinatorState.agentStats.set(indexerId, stats);
 }
 
 function dedupeTags(left: FileRecord['tags'], right: FileRecord['tags']): FileRecord['tags'] {

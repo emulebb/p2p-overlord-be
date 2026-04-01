@@ -4,6 +4,7 @@
 		AgentInterfacesView,
 		InterfaceBindingSelection,
 		InterfaceSelectionState,
+		KeepBusyCandidateView,
 		KadHarvestObservability,
 		KadPublishObservability,
 		SearchRequest,
@@ -42,6 +43,11 @@
 		file_count: number;
 		search_results: number;
 		result_batches: number;
+		keepBusy: {
+			enabled: boolean;
+			started: boolean;
+			lastJobsDispatched: number;
+		};
 	};
 
 	type BadgeTone = 'neutral' | 'accent' | 'good' | 'warn' | 'danger';
@@ -54,20 +60,26 @@
 				snoops: SnoopDashboardEntry[];
 				trending: SnoopTrendEntry[];
 				holes: SnoopDemandHoleEntry[];
+				keepBusyCandidates: KeepBusyCandidateView[];
 		  }
 		| undefined;
 
 	let query = '';
 	let searchProtocol: SearchRequest['protocol'] = 'kad2';
+	let keepBusyQuery = '';
 	let searchError = '';
+	let keepBusyError = '';
 	let creatingSearch = false;
+	let creatingKeepBusy = false;
 	let snoops: SnoopDashboardEntry[] = [];
 	let trending: SnoopTrendEntry[] = [];
 	let holes: SnoopDemandHoleEntry[] = [];
+	let keepBusyCandidates: KeepBusyCandidateView[] = [];
 
 	$: snoops = data?.snoops ?? [];
 	$: trending = data?.trending ?? [];
 	$: holes = data?.holes ?? [];
+	$: keepBusyCandidates = data?.keepBusyCandidates ?? [];
 
 	async function startSearch() {
 		const trimmed = query.trim();
@@ -100,6 +112,40 @@
 			searchError = error instanceof Error ? error.message : String(error);
 		} finally {
 			creatingSearch = false;
+		}
+	}
+
+	async function addKeepBusyCandidate() {
+		const trimmed = keepBusyQuery.trim();
+		if (!trimmed) {
+			keepBusyError = 'Enter a keep-busy keyword first.';
+			return;
+		}
+
+		creatingKeepBusy = true;
+		keepBusyError = '';
+		try {
+			const response = await fetch('/api/keep-busy/candidates', {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify({ query: trimmed })
+			});
+			if (!response.ok) {
+				const payload = (await response.json()) as { error?: string };
+				throw new Error(payload.error ?? `keep-busy update failed with ${response.status}`);
+			}
+			const candidate = (await response.json()) as KeepBusyCandidateView;
+			keepBusyCandidates = [
+				candidate,
+				...keepBusyCandidates.filter((entry) => entry.queryKey !== candidate.queryKey)
+			].slice(0, 20);
+			keepBusyQuery = '';
+		} catch (error) {
+			keepBusyError = error instanceof Error ? error.message : String(error);
+		} finally {
+			creatingKeepBusy = false;
 		}
 	}
 
@@ -322,6 +368,11 @@
 							<td class="mono">{data.shellStatus.search_results}</td>
 							<td>{data.shellStatus.result_batches} result batches observed by the coordinator.</td>
 						</tr>
+						<tr>
+							<td>Keep-busy worker</td>
+							<td class="mono">{data.shellStatus.keepBusy.enabled ? 'enabled' : 'disabled'}</td>
+							<td>Last cycle dispatched {data.shellStatus.keepBusy.lastJobsDispatched} auto jobs.</td>
+						</tr>
 					</tbody>
 				</table>
 			</div>
@@ -376,6 +427,7 @@
 								<thead>
 									<tr>
 										<th>Query</th>
+										<th>Origin</th>
 										<th>Protocol</th>
 										<th>Status</th>
 										<th>Results</th>
@@ -387,6 +439,12 @@
 									{#each data.searches as search}
 										<tr>
 											<td>{search.query ?? search.job_id}</td>
+											<td>
+												<StatusBadge
+													tone={search.origin === 'keep_busy_auto' ? 'warn' : 'neutral'}
+													text={search.origin === 'keep_busy_auto' ? 'keep-busy' : 'user'}
+												/>
+											</td>
 											<td><StatusBadge tone="neutral" text={search.protocol} /></td>
 											<td>
 												<StatusBadge
@@ -448,6 +506,75 @@
 						</div>
 					</dl>
 				</div>
+			</Panel>
+		</section>
+
+		<section class="split-grid">
+			<Panel
+				title="Keep-Busy Keywords"
+				subtitle="Inject manual keyword terms into the same candidate pool used by the coordinator keep-busy worker."
+			>
+				<div class="stack">
+					<form class="inline-form" on:submit|preventDefault={addKeepBusyCandidate}>
+						<label class="field">
+							<span>Keyword</span>
+							<input
+								class="input"
+								bind:value={keepBusyQuery}
+								placeholder="ubuntu linux 24.04"
+								autocomplete="off"
+							/>
+						</label>
+						<button class="button" type="submit" disabled={creatingKeepBusy}>
+							{creatingKeepBusy ? 'Adding...' : 'Add keep-busy keyword'}
+						</button>
+					</form>
+
+					<p class="hint">
+						UI-added keywords are stored as `Keep-busy UI` candidates and compete with web-fed terms
+						using the same cooldown and dispatch logic.
+					</p>
+
+					{#if keepBusyError}
+						<p class="message message--danger">{keepBusyError}</p>
+					{/if}
+				</div>
+			</Panel>
+
+			<Panel
+				title="Keep-Busy Candidates"
+				subtitle="Recent auto-feed candidates from the web worker and manual UI additions."
+			>
+				{#if keepBusyCandidates.length > 0}
+					<div class="table-shell wm-shell">
+						<table class="wm-table">
+							<thead>
+								<tr>
+									<th>Query</th>
+									<th>Source</th>
+									<th>Seen</th>
+									<th>Dispatches</th>
+									<th>Results</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each keepBusyCandidates as candidate}
+									<tr>
+										<td>{candidate.query}</td>
+										<td><StatusBadge tone="accent" text={candidate.sourceLabel} /></td>
+										<td>{formatTimestamp(candidate.lastSeenAt)}</td>
+										<td>{candidate.dispatchCount}</td>
+										<td>{candidate.lastResultCount}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{:else}
+					<p class="message message--accent">
+						No keep-busy candidates yet. Add one from the UI or enable the web-source worker.
+					</p>
+				{/if}
 			</Panel>
 		</section>
 

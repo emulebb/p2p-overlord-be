@@ -23,6 +23,7 @@ import {
 	storeAgentInterfaceReport,
 	storeAgentNatStatus,
 	storeAgentPublishObservability,
+	storeAgentStats,
 	updateAgentNetworkingConfig
 } from '$lib/server/state';
 import logger from '$lib/server/logger';
@@ -364,6 +365,7 @@ async function refreshAgentInterfaceInternal(
 		}
 		storeAgentInterfaceReport(indexerId, report);
 		storeAgentNatStatus(indexerId, stats.nat);
+		storeAgentStats(indexerId, stats);
 		storeAgentActivity(indexerId, stats.agent_activity);
 		storeAgentPublishObservability(indexerId, stats.publish_observability);
 		storeAgentHarvestObservability(indexerId, stats.harvest_observability);

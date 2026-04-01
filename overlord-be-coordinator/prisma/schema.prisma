@@ -6,180 +6,230 @@ datasource db {
   provider = "postgresql"
 }
 
+/// SQL naming is canonical for this workspace:
+/// - PostgreSQL tables and columns use snake_case.
+/// - Prisma models and fields use camelCase and must map explicitly via @@map/@map.
 model File {
   id                 BigInt              @id @default(autoincrement())
   size               BigInt?
-  firstSeen          DateTime            @default(now())
-  lastSeen           DateTime            @default(now())
+  firstSeen          DateTime            @default(now()) @map("first_seen")
+  lastSeen           DateTime            @default(now()) @map("last_seen")
   names              FileName[]
   hashes             FileHash[]
   tags               FileTag[]
   sources            Source[]
   searchLinks        SearchResult[]
   harvestReplayLinks HarvestReplayFile[]
+
+  @@map("files")
 }
 
 model FileHash {
-  hashType  String
-  hashValue String
-  fileId    BigInt
+  hashType  String @map("hash_type")
+  hashValue String @map("hash_value")
+  fileId    BigInt @map("file_id")
   file      File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@id([hashType, hashValue])
+  @@map("file_hashes")
 }
 
 model FileName {
-  id        BigInt   @id @default(autoincrement())
-  fileId    BigInt
+  id        BigInt                 @id @default(autoincrement())
+  fileId    BigInt                 @map("file_id")
   name      String
-  firstSeen DateTime @default(now())
-  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  firstSeen DateTime               @default(now()) @map("first_seen")
+  nameTsv   Unsupported("tsvector")? @default(dbgenerated()) @map("name_tsv")
+  file      File                   @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@unique([fileId, name])
   @@index([fileId])
+  @@map("file_names")
 }
 
 model FileTag {
-  id      BigInt @id @default(autoincrement())
-  fileId  BigInt
-  key     String
-  value   Json
-  file    File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  id     BigInt @id @default(autoincrement())
+  fileId BigInt @map("file_id")
+  key    String
+  value  Json
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@map("file_tags")
 }
 
 model Source {
-  id        BigInt   @id @default(autoincrement())
-  fileId    BigInt
-  protocol  String
-  address   String
-  extra     Json
-  seenAt    DateTime @default(now())
-  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  id       BigInt   @id @default(autoincrement())
+  fileId   BigInt   @map("file_id")
+  protocol String
+  address  String
+  extra    Json
+  seenAt   DateTime @default(now()) @map("seen_at")
+  file     File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@index([fileId])
+  @@map("sources")
 }
 
 model SearchJob {
-  id                String         @id
+  id                String           @id
   protocol          String
   kind              String
   query             String?
-  fileHash          Json?
-  fileSize          BigInt?
+  fileHash          Json?            @map("file_hash")
+  fileSize          BigInt?          @map("file_size")
+  origin            String           @default("user_api")
+  originKey         String?          @map("origin_key")
   status            String
-  resultCount       Int            @default(0)
-  lastError         String?
-  createdAt         DateTime       @default(now())
-  startedAt         DateTime?
-  finishedAt        DateTime?
-  cancelRequestedAt DateTime?
+  resultCount       Int              @default(0) @map("result_count")
+  lastError         String?          @map("last_error")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  startedAt         DateTime?        @map("started_at")
+  finishedAt        DateTime?        @map("finished_at")
+  cancelRequestedAt DateTime?        @map("cancel_requested_at")
   dispatches        SearchDispatch[]
   results           SearchResult[]
+
+  @@index([origin, createdAt])
+  @@index([originKey])
+  @@map("search_jobs")
 }
 
 model SearchDispatch {
   id          BigInt    @id @default(autoincrement())
-  jobId       String
-  indexerId   String
+  jobId       String    @map("job_id")
+  indexerId   String    @map("indexer_id")
   status      String
-  resultCount Int       @default(0)
-  batchCount  Int       @default(0)
-  lastError   String?
-  createdAt   DateTime  @default(now())
-  startedAt   DateTime?
-  finishedAt  DateTime?
+  resultCount Int       @default(0) @map("result_count")
+  batchCount  Int       @default(0) @map("batch_count")
+  lastError   String?   @map("last_error")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  startedAt   DateTime? @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
   job         SearchJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, indexerId])
+  @@map("search_dispatches")
 }
 
 model SearchResult {
-  jobId      String
-  fileId     BigInt
-  seenCount  Int      @default(1)
-  firstSeen  DateTime @default(now())
-  lastSeen   DateTime @default(now())
-  job        SearchJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  file       File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  jobId     String   @map("job_id")
+  fileId    BigInt   @map("file_id")
+  seenCount Int      @default(1) @map("seen_count")
+  firstSeen DateTime @default(now()) @map("first_seen")
+  lastSeen  DateTime @default(now()) @map("last_seen")
+  job       SearchJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  file      File      @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@id([jobId, fileId])
   @@index([fileId])
+  @@map("search_results")
 }
 
 model SnoopEntry {
-  indexerId  String
-  logicalKey String
-  family     String
-  target     String
-  requestShape Json?
-  startPosition Int?
-  size       BigInt?
-  restrictivePayloadHex String?
-  hitCount   Int
-  firstSeen  DateTime
-  lastSeen   DateTime
-  lastDrainedAt DateTime?
+  indexerId             String    @map("indexer_id")
+  logicalKey            String    @map("logical_key")
+  family                String
+  target                String
+  requestShape          Json?     @map("request_shape")
+  startPosition         Int?      @map("start_position")
+  size                  BigInt?
+  restrictivePayloadHex String?   @map("restrictive_payload_hex")
+  hitCount              Int       @map("hit_count")
+  firstSeen             DateTime  @map("first_seen")
+  lastSeen              DateTime  @map("last_seen")
+  lastDrainedAt         DateTime? @map("last_drained_at")
 
-  @@unique([indexerId, logicalKey])
+  @@id([indexerId, logicalKey])
+  @@map("snoop_entries")
 }
 
 model SnoopLog {
   id                    BigInt   @id @default(autoincrement())
-  indexerId             String
+  indexerId             String   @map("indexer_id")
   family                String
-  logicalKey            String
+  logicalKey            String   @map("logical_key")
   target                String
-  requestShape          Json?
-  startPosition         Int?
+  requestShape          Json?    @map("request_shape")
+  startPosition         Int?     @map("start_position")
   size                  BigInt?
-  restrictivePayloadHex String?
-  observedAt            DateTime @default(now())
+  restrictivePayloadHex String?  @map("restrictive_payload_hex")
+  observedAt            DateTime @default(now()) @map("observed_at")
 
   @@index([observedAt])
   @@index([family, logicalKey, observedAt])
+  @@map("snoop_log")
 }
 
 model HarvestReplay {
   id                    String              @id
-  indexerId             String
+  indexerId             String              @map("indexer_id")
   family                String
-  logicalKey            String
+  logicalKey            String              @map("logical_key")
   target                String
-  requestShape          Json?
-  startPosition         Int?
+  requestShape          Json?               @map("request_shape")
+  startPosition         Int?                @map("start_position")
   size                  BigInt?
-  restrictivePayloadHex String?
-  startedAt             DateTime
-  completedAt           DateTime
-  resultCount           Int                 @default(0)
-  batchCount            Int                 @default(0)
+  restrictivePayloadHex String?             @map("restrictive_payload_hex")
+  startedAt             DateTime            @map("started_at")
+  completedAt           DateTime            @map("completed_at")
+  resultCount           Int                 @default(0) @map("result_count")
+  batchCount            Int                 @default(0) @map("batch_count")
   error                 String?
   files                 HarvestReplayFile[]
 
   @@index([family, logicalKey])
   @@index([completedAt])
+  @@map("harvest_replays")
 }
 
 model HarvestReplayFile {
-  replayId String
-  fileId   BigInt
+  replayId String        @map("replay_id")
+  fileId   BigInt        @map("file_id")
   replay   HarvestReplay @relation(fields: [replayId], references: [id], onDelete: Cascade)
   file     File          @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@id([replayId, fileId])
   @@index([fileId])
+  @@map("harvest_replay_files")
+}
+
+model KeepBusyCandidate {
+  queryKey         String    @id @map("query_key")
+  query            String
+  rawTitle         String    @map("raw_title")
+  sourceId         String    @map("source_id")
+  sourceLabel      String    @map("source_label")
+  sourceUrl        String    @map("source_url")
+  sourceWeight     Int       @map("source_weight")
+  firstSeenAt      DateTime  @default(now()) @map("first_seen_at")
+  lastSeenAt       DateTime  @default(now()) @map("last_seen_at")
+  seenCount        Int       @default(1) @map("seen_count")
+  dispatchCount    Int       @default(0) @map("dispatch_count")
+  successCount     Int       @default(0) @map("success_count")
+  zeroResultCount  Int       @default(0) @map("zero_result_count")
+  lastResultCount  Int       @default(0) @map("last_result_count")
+  lastDispatchedAt DateTime? @map("last_dispatched_at")
+  lastCompletedAt  DateTime? @map("last_completed_at")
+  cooldownUntil    DateTime? @map("cooldown_until")
+  lastError        String?   @map("last_error")
+
+  @@index([cooldownUntil])
+  @@index([lastSeenAt])
+  @@map("keep_busy_candidates")
 }
 
 model StatsSample {
   id                BigInt   @id @default(autoincrement())
-  indexerId         String
+  indexerId         String   @map("indexer_id")
   protocol          String
-  peersConnected    Int
-  crawlRate         Float
-  snoopQueueDepth   Int
-  stagingQueueDepth Int
-  uptimeSecs        BigInt
-  createdAt         DateTime @default(now())
+  peersConnected    Int      @map("peers_connected")
+  crawlRate         Float    @map("crawl_rate")
+  snoopQueueDepth   Int      @map("snoop_queue_depth")
+  stagingQueueDepth Int      @map("staging_queue_depth")
+  uptimeSecs        BigInt   @map("uptime_secs")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("stats_samples")
 }
 
 model IndexerRegistry {
@@ -188,15 +238,18 @@ model IndexerRegistry {
   url          String
   hostname     String
   version      String
-  registeredAt DateTime @default(now())
+  registeredAt DateTime @default(now()) @map("registered_at")
+
+  @@map("indexer_registry")
 }
 
 model RawHash {
-  hashType     String
-  hashValue    String
-  protocol     String
-  firstSeen    DateTime @default(now())
-  status       String   @default("pending")
+  hashType  String   @map("hash_type")
+  hashValue String   @map("hash_value")
+  protocol  String
+  firstSeen DateTime @default(now()) @map("first_seen")
+  status    String   @default("pending")
 
   @@id([hashType, hashValue])
+  @@map("raw_hashes")
 }

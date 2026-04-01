@@ -10,6 +10,11 @@
 		file_count: number;
 		search_results: number;
 		result_batches: number;
+		keepBusy: {
+			enabled: boolean;
+			started: boolean;
+			lastJobsDispatched: number;
+		};
 	};
 
 	export let data: {
@@ -85,6 +90,10 @@
 		<div class="status-strip__item">
 			<span>Result Batches</span>
 			<strong>{data.shellStatus.result_batches}</strong>
+		</div>
+		<div class="status-strip__item">
+			<span>Keep-Busy</span>
+			<strong>{data.shellStatus.keepBusy.enabled ? 'on' : 'off'}</strong>
 		</div>
 	</section>
 

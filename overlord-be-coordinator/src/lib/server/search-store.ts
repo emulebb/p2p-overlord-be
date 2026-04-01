@@ -1,6 +1,7 @@
 import { Prisma, type SearchDispatch as PrismaSearchDispatch } from '@prisma/client';
 
 import { getDb, getPgPool } from '$lib/server/db';
+import { recordKeepBusyOutcome } from '$lib/server/keep-busy-store';
 import { publishSearchStream } from '$lib/server/search-events';
 import type {
 	FileRecord,
@@ -15,6 +16,7 @@ import type {
 	SearchDispatchView,
 	SearchEvent,
 	SearchJob,
+	SearchJobOrigin,
 	SearchJobStatus,
 	SearchJobStatusView
 } from '$lib/shared/internal-api';
@@ -287,6 +289,8 @@ function toJobView(job: SearchJobWithRelations): SearchJobStatusView {
 		query: job.query,
 		file_hash: parseHash(job.fileHash),
 		file_size: bigintToNumber(job.fileSize),
+		origin: job.origin as SearchJobOrigin,
+		origin_key: job.originKey,
 		status: job.status as SearchJobStatus,
 		created_at: job.createdAt.toISOString(),
 		started_at: toIso(job.startedAt),
@@ -298,6 +302,16 @@ function toJobView(job: SearchJobWithRelations): SearchJobStatusView {
 		dispatches: job.dispatches.map(toDispatchView),
 		results: job.results.map((result) => toFileRecord(result.file))
 	};
+}
+
+async function maybeRecordKeepBusyJobOutcome(job: SearchJobWithRelations): Promise<void> {
+	if (job.origin !== 'keep_busy_auto' || !job.originKey) {
+		return;
+	}
+	if (!['completed', 'completed_with_errors', 'failed', 'cancelled'].includes(job.status)) {
+		return;
+	}
+	await recordKeepBusyOutcome(job.originKey, job.resultCount, job.lastError ?? null);
 }
 
 function terminalDispatch(status: string): boolean {
@@ -554,6 +568,8 @@ export async function createSearchJob(job: SearchJob, indexerIds: string[]): Pro
 			query: job.query,
 			fileHash: serializeHash(job.file_hash),
 			fileSize: job.file_size === null ? null : BigInt(job.file_size),
+			origin: job.origin,
+			originKey: job.origin_key,
 			status: 'queued',
 			dispatches: {
 				create: indexerIds.map((indexerId) => ({
@@ -606,6 +622,7 @@ export async function markSearchDispatchFailed(
 		return refreshJobStatus(tx, jobId);
 	});
 	publishSearchStream(jobId, { event: 'job', data: toJobView(snapshot) });
+	await maybeRecordKeepBusyJobOutcome(snapshot);
 }
 
 export async function ingestResultBatch(batch: ResultBatch): Promise<void> {
@@ -738,6 +755,7 @@ export async function applySearchEvent(event: SearchEvent): Promise<SearchJobSta
 
 	const view = toJobView(snapshot);
 	publishSearchStream(event.job_id, { event: 'job', data: view });
+	await maybeRecordKeepBusyJobOutcome(snapshot);
 	return view;
 }
 
@@ -800,12 +818,12 @@ export async function listIndexedFiles(input: {
 		? await pgPool.query<IndexedFileCountRow>(
 				`
 				SELECT COUNT(*)::bigint AS count
-				FROM "File" f
+				FROM files f
 				WHERE EXISTS (
 					SELECT 1
-					FROM "FileName" fn
-					WHERE fn."fileId" = f.id
-						AND fn."nameTsv" @@ websearch_to_tsquery('english', $1)
+					FROM file_names fn
+					WHERE fn.file_id = f.id
+						AND fn.name_tsv @@ websearch_to_tsquery('english', $1)
 				)
 			`,
 				[params.query]
@@ -813,7 +831,7 @@ export async function listIndexedFiles(input: {
 		: await pgPool.query<IndexedFileCountRow>(
 				`
 				SELECT COUNT(*)::bigint AS count
-				FROM "File"
+				FROM files
 			`
 			);
 
@@ -821,17 +839,17 @@ export async function listIndexedFiles(input: {
 		? await pgPool.query<IndexedFileRow>(
 				`
 				WITH source_counts AS (
-					SELECT deduped."fileId", COUNT(*)::bigint AS "sourceCount"
+					SELECT deduped.file_id AS "fileId", COUNT(*)::bigint AS "sourceCount"
 					FROM (
-						SELECT DISTINCT s."fileId", s."protocol", s."address", s."extra"
-						FROM "Source" s
+						SELECT DISTINCT s.file_id, s.protocol, s.address, s.extra
+						FROM sources s
 					) deduped
-					GROUP BY deduped."fileId"
+					GROUP BY deduped.file_id
 				),
 				search_counts AS (
-					SELECT sr."fileId", COUNT(DISTINCT sr."jobId")::bigint AS "searchJobCount"
-					FROM "SearchResult" sr
-					GROUP BY sr."fileId"
+					SELECT sr.file_id AS "fileId", COUNT(DISTINCT sr.job_id)::bigint AS "searchJobCount"
+					FROM search_results sr
+					GROUP BY sr.file_id
 				),
 				ranked_files AS (
 					SELECT
@@ -840,18 +858,18 @@ export async function listIndexedFiles(input: {
 						COALESCE(source_counts."sourceCount", 0::bigint) AS "sourceCount",
 						COALESCE(search_counts."searchJobCount", 0::bigint) AS "searchJobCount",
 						f.size AS size,
-						f."firstSeen" AS "firstSeen",
-						f."lastSeen" AS "lastSeen",
-						MAX(ts_rank(fn."nameTsv", websearch_to_tsquery('english', $1))) AS score
-					FROM "File" f
-					JOIN "FileName" fn
-						ON fn."fileId" = f.id
-						AND fn."nameTsv" @@ websearch_to_tsquery('english', $1)
+						f.first_seen AS "firstSeen",
+						f.last_seen AS "lastSeen",
+						MAX(ts_rank(fn.name_tsv, websearch_to_tsquery('english', $1))) AS score
+					FROM files f
+					JOIN file_names fn
+						ON fn.file_id = f.id
+						AND fn.name_tsv @@ websearch_to_tsquery('english', $1)
 					LEFT JOIN LATERAL (
-						SELECT fn_primary."name" AS name
-						FROM "FileName" fn_primary
-						WHERE fn_primary."fileId" = f.id
-						ORDER BY fn_primary."firstSeen" ASC, fn_primary.id ASC
+						SELECT fn_primary.name AS name
+						FROM file_names fn_primary
+						WHERE fn_primary.file_id = f.id
+						ORDER BY fn_primary.first_seen ASC, fn_primary.id ASC
 						LIMIT 1
 					) primary_name ON TRUE
 					LEFT JOIN source_counts
@@ -864,8 +882,8 @@ export async function listIndexedFiles(input: {
 						source_counts."sourceCount",
 						search_counts."searchJobCount",
 						f.size,
-						f."firstSeen",
-						f."lastSeen"
+						f.first_seen,
+						f.last_seen
 					${orderBy}
 					LIMIT $2
 					OFFSET $3
@@ -878,17 +896,17 @@ export async function listIndexedFiles(input: {
 		: await pgPool.query<IndexedFileRow>(
 				`
 				WITH source_counts AS (
-					SELECT deduped."fileId", COUNT(*)::bigint AS "sourceCount"
+					SELECT deduped.file_id AS "fileId", COUNT(*)::bigint AS "sourceCount"
 					FROM (
-						SELECT DISTINCT s."fileId", s."protocol", s."address", s."extra"
-						FROM "Source" s
+						SELECT DISTINCT s.file_id, s.protocol, s.address, s.extra
+						FROM sources s
 					) deduped
-					GROUP BY deduped."fileId"
+					GROUP BY deduped.file_id
 				),
 				search_counts AS (
-					SELECT sr."fileId", COUNT(DISTINCT sr."jobId")::bigint AS "searchJobCount"
-					FROM "SearchResult" sr
-					GROUP BY sr."fileId"
+					SELECT sr.file_id AS "fileId", COUNT(DISTINCT sr.job_id)::bigint AS "searchJobCount"
+					FROM search_results sr
+					GROUP BY sr.file_id
 				),
 				listed_files AS (
 					SELECT
@@ -897,14 +915,14 @@ export async function listIndexedFiles(input: {
 						COALESCE(source_counts."sourceCount", 0::bigint) AS "sourceCount",
 						COALESCE(search_counts."searchJobCount", 0::bigint) AS "searchJobCount",
 						f.size AS size,
-						f."firstSeen" AS "firstSeen",
-						f."lastSeen" AS "lastSeen"
-					FROM "File" f
+						f.first_seen AS "firstSeen",
+						f.last_seen AS "lastSeen"
+					FROM files f
 					LEFT JOIN LATERAL (
-						SELECT fn_primary."name" AS name
-						FROM "FileName" fn_primary
-						WHERE fn_primary."fileId" = f.id
-						ORDER BY fn_primary."firstSeen" ASC, fn_primary.id ASC
+						SELECT fn_primary.name AS name
+						FROM file_names fn_primary
+						WHERE fn_primary.file_id = f.id
+						ORDER BY fn_primary.first_seen ASC, fn_primary.id ASC
 						LIMIT 1
 					) primary_name ON TRUE
 					LEFT JOIN source_counts

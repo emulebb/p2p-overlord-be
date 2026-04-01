@@ -1,9 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 
-import { createSearchJob, getSearchJob, markSearchDispatchFailed, markSearchDispatchSent } from '$lib/server/search-store';
-import type { SearchJob, SearchRequest } from '$lib/shared/internal-api';
-import { refreshAllAgentInterfaces } from '$lib/server/agent-control';
-import { getReadyIndexersByProtocol } from '$lib/server/state';
+import { dispatchSearchRequest } from '$lib/server/search-dispatch';
+import type { SearchRequest } from '$lib/shared/internal-api';
 
 export const POST: RequestHandler = async ({ request, url, fetch }) => {
 	const payload = (await request.json()) as Partial<SearchRequest>;
@@ -47,52 +45,25 @@ export const POST: RequestHandler = async ({ request, url, fetch }) => {
 		);
 	}
 
-	await refreshAllAgentInterfaces();
-	const agents =
-		payload.protocol === 'ed2k'
-			? getReadyIndexersByProtocol('kad2')
-			: getReadyIndexersByProtocol(payload.protocol);
-	if (agents.length === 0) {
-		return json({ error: `no ready ${payload.protocol} agents` }, { status: 503 });
-	}
-
-	const job: SearchJob = {
-		job_id: crypto.randomUUID(),
-		protocol: payload.protocol,
-		kind: payload.kind,
-		query,
-		file_hash: fileHash,
-		file_size: fileSize,
-		callback_url: url.origin
-	};
-	await createSearchJob(job, agents.map((agent) => agent.indexer_id));
-
-	for (const agent of agents) {
-		try {
-			const response = await fetch(`${agent.url}/api/internal/search`, {
-				method: 'POST',
-				headers: {
-					'content-type': 'application/json'
-				},
-				body: JSON.stringify(job)
-			});
-			if (response.ok) {
-				await markSearchDispatchSent(job.job_id, agent.indexer_id);
-				continue;
+	try {
+		const job = await dispatchSearchRequest(
+			{
+				protocol: payload.protocol,
+				kind: payload.kind,
+				query,
+				file_hash: fileHash,
+				file_size: fileSize
+			} as SearchRequest,
+			{
+				callbackOrigin: url.origin,
+				fetch
 			}
-			await markSearchDispatchFailed(
-				job.job_id,
-				agent.indexer_id,
-				`agent search dispatch failed with ${response.status}`
-			);
-		} catch (error) {
-			await markSearchDispatchFailed(
-				job.job_id,
-				agent.indexer_id,
-				error instanceof Error ? error.message : String(error)
-			);
-		}
+		);
+		return json(job, { status: 202 });
+	} catch (error) {
+		return json(
+			{ error: error instanceof Error ? error.message : String(error) },
+			{ status: 503 }
+		);
 	}
-
-	return json(await getSearchJob(job.job_id), { status: 202 });
 };

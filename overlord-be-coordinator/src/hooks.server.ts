@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { Handle, HandleFetch, HandleServerError } from '@sveltejs/kit';
 import type { Logger } from 'winston';
 
+import { ensureKeepBusyWorkerStarted } from '$lib/server/keep-busy-worker';
 import logger from '$lib/server/logger';
 
 const log: Logger = logger.child({ module: 'hooks.server' });
@@ -11,6 +12,7 @@ const log: Logger = logger.child({ module: 'hooks.server' });
  * Records every inbound HTTP request with a request-scoped trace id.
  */
 export const handle: Handle = async ({ event, resolve }) => {
+	ensureKeepBusyWorkerStarted();
 	const requestId = randomUUID();
 	const startedAt = Date.now();
 	const requestUrl = event.url.toString();
