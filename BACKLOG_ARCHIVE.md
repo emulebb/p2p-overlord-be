@@ -10,7 +10,7 @@ This file is not an active backlog. Keep new actionable work in `BACKLOG.md`.
 |---|---|
 | `../TODO.md` | Consolidated into `ITEM_001`, `ITEM_002`, `ITEM_003`, `ITEM_005`, and `ITEM_010`; resolved item `TODO-20260322-002` archived here |
 | `../TODONEXTKAD.md` | Consolidated into `ITEM_001` and `ITEM_004` through `ITEM_009` |
-| `OVERLORD.md` backlog `B001` through `B020` | Consolidated into `ITEM_011` through `ITEM_030` |
+| Legacy backend spec backlog `B001` through `B020` | Consolidated into `ITEM_011` through `ITEM_030` |
 
 ## Archived Legacy Items
 

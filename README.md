@@ -3,7 +3,7 @@
 > Multi-protocol P2P indexer. Crawls KAD, ED2K, BitTorrent DHT, Gnutella G2, and IPFS 24/7.
 > Aggregates metadata into a unified PostgreSQL index with cross-protocol deduplication.
 
-See [OVERLORD.md](OVERLORD.md) for the full specification.
+See [docs/README.md](docs/README.md) for the structured backend specification.
 
 ---
 
@@ -137,7 +137,7 @@ flowchart TD
 | SVC-004 | `overlord-agent-gnutella` | 13303 | 41003 TCP (G2) |
 | SVC-005 | `overlord-agent-ipfs` | 13304 | 41004 TCP (libp2p) |
 
-All ports are configurable via the central TOML. See [OVERLORD.md](OVERLORD.md) for configuration, the full phase roadmap, API reference, and database schema.
+All ports are configurable via the central TOML. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for configuration, [docs/ROADMAP.md](docs/ROADMAP.md) for phases, [docs/COORDINATOR.md](docs/COORDINATOR.md) for APIs and schema ownership, and [docs/ID_INDEX.md](docs/ID_INDEX.md) for the tracked ID registry.
 
 ## Validation Baseline
 
