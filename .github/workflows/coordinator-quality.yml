@@ -1,0 +1,59 @@
+name: Coordinator Quality
+
+on:
+  push:
+    paths:
+      - ".github/workflows/coordinator-quality.yml"
+      - "AGENTS.md"
+      - "README.md"
+      - "OVERLORD.md"
+      - "overlord-be-coordinator/package.json"
+      - "overlord-be-coordinator/package-lock.json"
+      - "overlord-be-coordinator/tsconfig.json"
+      - "overlord-be-coordinator/prisma.config.ts"
+      - "overlord-be-coordinator/prisma/**"
+      - "overlord-be-coordinator/src/**"
+      - "overlord-be-coordinator/scripts/windows/coordinator_quality.ps1"
+      - "overlord-be-db/scripts/windows/**"
+      - "overlord-be-db/README.md"
+  pull_request:
+    paths:
+      - ".github/workflows/coordinator-quality.yml"
+      - "AGENTS.md"
+      - "README.md"
+      - "OVERLORD.md"
+      - "overlord-be-coordinator/package.json"
+      - "overlord-be-coordinator/package-lock.json"
+      - "overlord-be-coordinator/tsconfig.json"
+      - "overlord-be-coordinator/prisma.config.ts"
+      - "overlord-be-coordinator/prisma/**"
+      - "overlord-be-coordinator/src/**"
+      - "overlord-be-coordinator/scripts/windows/coordinator_quality.ps1"
+      - "overlord-be-db/scripts/windows/**"
+      - "overlord-be-db/README.md"
+
+jobs:
+  coordinator-quality:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: overlord-be-coordinator
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: overlord-be-coordinator/package-lock.json
+
+      - name: Install coordinator dependencies
+        run: npm ci
+
+      - name: Run coordinator quality checks
+        run: ./scripts/windows/coordinator_quality.ps1

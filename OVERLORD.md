@@ -385,9 +385,10 @@ the SSR-rendered UI pages. The BFF pattern is native: load functions run server-
 pass typed data directly to page components — no CORS, no duplication.
 
 **Local validation baseline:** use the repo-local quality gates instead of ad hoc command
-selection. For Rust changes, run `overlord-agents/scripts/windows/rust_quality.ps1`. For
-coordinator changes, run `overlord-be-coordinator/scripts/windows/coordinator_quality.ps1`,
-which currently covers `npm run check`, Prisma schema validation, and Prisma client generation.
+selection. Repo-local rules are tracked in each repo's `AGENTS.md`. For Rust changes, run
+`overlord-agents/scripts/windows/rust_quality.ps1`. For coordinator changes, run
+`overlord-be-coordinator/scripts/windows/coordinator_quality.ps1`, which currently covers
+`npm run check`, Prisma schema validation, and Prisma client generation.
 
 Single source of truth. Owns the DB, the API, the config, all intelligence layers, and all
 download client integrations.
