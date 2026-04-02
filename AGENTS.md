@@ -1,6 +1,7 @@
 # Backend Repo Rules
 
 - Follow the shared workspace guidance from `../AGENTS.md` in addition to this file.
+- Use `BACKLOG.md` in this repo as the canonical active backlog.
 - Use `overlord-be-coordinator/scripts/windows/coordinator_quality.ps1` as the canonical local quality gate for coordinator changes.
 - The conservative coordinator baseline is:
   - `npm run check`

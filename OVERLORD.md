@@ -1574,35 +1574,9 @@ and indexer sharding by hash prefix range remain in backlog [B004].
 
 ## 14. Backlog
 
-Explicitly deferred. Do not implement until a phase calls for it.
+The canonical active backlog lives in [BACKLOG.md](./BACKLOG.md).
 
-- [B001] **Prometheus metrics**: `/metrics` on all services, Grafana dashboards
-- [B002] **Authentication**: implement real password login behind the `A033`/`A034` stub;
-         bcrypt password store, session cookies — all route guards already in place [F033]
-- [B003] **Content filtering**: hash blocklist integration for known-bad content
-- [B004] **Coordinator HA + indexer sharding**: Postgres already done (Phase 1);
-         coordinator active/passive HA + indexer sharding by hash prefix range remain
-- [B005] **Sharing back**: publish indexed content to all networks
-- [B006] **Native downloaders**: eMule MFTP in `nc-emule`, BitTorrent in `nc-mainline`
-         as in-process alternatives to the external download client abstraction [F031]
-- [B007] **Rate limit UI**: live queue rate adjustment from frontend without TOML edit
-- [B008] **Correlation log UI**: admin page to review and revert bad merges from `W002`/`W003`
-- [B009] **Source TTL pruning**: enforce `pruning_config.source_ttl_days` [T017]
-- [B010] **File TTL pruning**: enforce `pruning_config.file_ttl_days` [T017]
-- [B011] **Correlation log table**: append-only audit trail for `W002` merges
-- [B012] **Gnutella 1 (G1)**: flood-based, low ROI — revisit only if G2 proves insufficient
-- [B013] **Content fingerprinting**: audio/video perceptual hashing (AcoustID, pHash)
-         for cross-protocol dedup beyond name+size
-- [B014] **Torrent file synthesis**: generate `.torrent` from indexed BT metadata we hold
-- [B015] **Demand Holes auto-boost** [F019]: auto-elevate high-demand `raw_hashes` to
-         front of `W001` enrichment queue based on `T014` hit frequency
-- [B016] **Outbound alerts/webhooks**: user registers query + webhook URL; coordinator
-         fires it when a matching file is promoted
-- [B017] **Remote indexer crawl pause/resume**: management API + UI per instance [F030]
-- [B018] **Coordinator-pushed indexer binary updates**: coordinator distributes new
-         indexer binaries to registered nodes over HTTP
-- [B019] **Download completion post-processing**: move, rename, or webhook on job finish
-- [B020] **Per-indexer throughput graphs**: sparklines in the Indexers management page [F030]
+This spec no longer carries a parallel active backlog list. Legacy deferred backlog IDs `B001` through `B020` were consolidated into canonical `ITEM_011` through `ITEM_030` in `BACKLOG.md` and are retained only as historical references.
 
 ---
 
@@ -1727,26 +1701,26 @@ Explicitly deferred. Do not implement until a phase calls for it.
 | W008 | Download client progress poller — updates T012 (Phase 9) | 5s |
 | W009 | Indexer offline detector — marks stale T016 rows offline | 60s |
 
-### Backlog Items
-| ID | Description |
+### Legacy Backlog IDs
+| Legacy ID | Canonical backlog ID |
 |---|---|
-| B001 | Prometheus metrics + Grafana |
-| B002 | Real password login behind A033/A034 stub |
-| B003 | Content hash blocklist |
-| B004 | Coordinator HA + indexer sharding (Postgres already done) |
-| B005 | Sharing back to all networks |
-| B006 | Native in-process downloaders (eMule MFTP, BitTorrent) |
-| B007 | Rate limit live adjustment from frontend |
-| B008 | Correlation log UI |
-| B009 | Source TTL pruning enforcement |
-| B010 | File TTL pruning enforcement |
-| B011 | Correlation log table |
-| B012 | Gnutella 1 (G1) support |
-| B013 | Content fingerprinting (AcoustID, pHash) |
-| B014 | .torrent file synthesis |
-| B015 | Demand Holes auto-boost in W001 |
-| B016 | Outbound alerts / webhooks |
-| B017 | Remote indexer crawl pause/resume |
-| B018 | Coordinator-pushed indexer binary updates |
-| B019 | Download completion post-processing hooks |
-| B020 | Per-indexer throughput graphs in management UI |
+| B001 | ITEM_011 |
+| B002 | ITEM_012 |
+| B003 | ITEM_013 |
+| B004 | ITEM_014 |
+| B005 | ITEM_015 |
+| B006 | ITEM_016 |
+| B007 | ITEM_017 |
+| B008 | ITEM_018 |
+| B009 | ITEM_019 |
+| B010 | ITEM_020 |
+| B011 | ITEM_021 |
+| B012 | ITEM_022 |
+| B013 | ITEM_023 |
+| B014 | ITEM_024 |
+| B015 | ITEM_025 |
+| B016 | ITEM_026 |
+| B017 | ITEM_027 |
+| B018 | ITEM_028 |
+| B019 | ITEM_029 |
+| B020 | ITEM_030 |
