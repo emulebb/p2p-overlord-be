@@ -138,3 +138,18 @@ flowchart TD
 | SVC-005 | `overlord-agent-ipfs` | 13304 | 41004 TCP (libp2p) |
 
 All ports are configurable via the central TOML. See [OVERLORD.md](OVERLORD.md) for configuration, the full phase roadmap, API reference, and database schema.
+
+## Validation Baseline
+
+Use repo-local quality entrypoints before finishing changes:
+
+- Agents repo: run `overlord-agents/scripts/windows/rust_quality.ps1`
+- Coordinator repo: run `overlord-be/overlord-be-coordinator/scripts/windows/coordinator_quality.ps1`
+
+Coordinator baseline details:
+
+- `npm run check`
+- `npm run prisma:validate`
+- `npm run prisma:generate`
+
+For coordinator persisted-schema edits, this quality baseline is not enough by itself. After schema changes, also reset and rebuild the local DB through `overlord-be-db` and confirm the live schema still matches the canonical `snake_case` naming.

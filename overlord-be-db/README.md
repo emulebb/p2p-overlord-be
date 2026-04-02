@@ -91,6 +91,7 @@ node overlord-be/overlord-be-db/scripts/windows/db_run.mjs status
 - `schema.prisma` is the only coordinator schema source in this phase.
 - Prisma migrations are not treated as stable history in this phase; setup uses the current Prisma schema state through `db push`.
 - After any coordinator persisted-schema edit, reset the local DB explicitly with `--reset-data` and rerun setup.
+- For non-schema coordinator changes, use `overlord-be-coordinator/scripts/windows/coordinator_quality.ps1` as the local quality gate.
 - Do not treat incremental Prisma migration patches as the coordinator schema workflow in this phase.
 - `OVERLORD_PROJECT_DIR` overrides the workspace root used to locate `overlord-be-coordinator`.
 - `OVERLORD_TMP_DIR` overrides the shared workspace temp root used for the managed runtime layout.
