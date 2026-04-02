@@ -26,9 +26,9 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | Status | Count |
 |---|---:|
 | `IN_PROGRESS` | 1 |
-| `TODO` | 29 |
+| `TODO` | 28 |
 | `BLOCKED` | 0 |
-| `DONE` | 0 |
+| `DONE` | 1 |
 | `REJECTED` | 0 |
 
 | ID | Title | Status | Priority | Area | Source |
@@ -40,7 +40,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | `ITEM_005` | Align passive source-search scheduling cadence and replay ordering with the oracle | `TODO` | `P1` | `kad_replay` | `TODO-20260322-001`, `TODONEXTKAD` |
 | `ITEM_006` | Preserve full snooped request shape for passive replay fidelity | `TODO` | `P1` | `kad_replay` | `TODONEXTKAD` |
 | `ITEM_007` | Preserve per-author Kad notes results after live validation | `TODO` | `P1` | `kad_notes` | `TODONEXTKAD` |
-| `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `TODO` | `P1` | `kad_routing` | `TODONEXTKAD` |
+| `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `DONE` | `P1` | `kad_routing` | `TODONEXTKAD` |
 | `ITEM_009` | Rename misleading Kad proto semantic fields | `TODO` | `P2` | `kad_proto` | `TODONEXTKAD` |
 | `ITEM_010` | Complete ED2K server keyword-search parity on real servers | `TODO` | `P2` | `ed2k` | `TODO-20260322-001` |
 | `ITEM_011` | Add Prometheus metrics and Grafana dashboards | `TODO` | `P3` | `observability` | `OVERLORD:B001` |
@@ -131,12 +131,12 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 ### `ITEM_008` — Port routing `CanSplit` and per-bin `/24` clustering rules
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Area: `kad_routing`
 - Source: `TODONEXTKAD`
-- Summary: Routing-table behavior is closer to the oracle now, but the real split rule and per-bin subnet clustering caps are still missing.
-- Next steps: Port both rules from the oracle, add targeted coverage, and observe long-run lookup quality under load.
+- Summary: The oracle `CanSplit` predicate and per-bin two-per-`/24` anti-clustering cap are already in the Rust routing table and were live-validated on April 2, 2026. This pass added explicit rejection reasons, routing-side observability, targeted tests, and real-network evidence showing oracle-style split decisions during bootstrap and healthy live lookup results.
+- Next steps: Archive this item out of the active backlog on the next backlog cleanup pass. Treat any future routing work as new follow-up items tied to a concrete live behavior gap, not as unfinished `CanSplit` or per-bin `/24` parity.
 
 ### `ITEM_009` — Rename misleading Kad proto semantic fields
 
