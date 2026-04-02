@@ -11,7 +11,7 @@ Windows helper scripts for provisioning and running a local portable PostgreSQL 
   - Ensures the Windows Firewall rule exists for TCP `5432`.
   - Initializes the cluster if needed.
   - Writes `overlord-be-coordinator/.env` with `DATABASE_URL=postgresql://overlord:overlord@127.0.0.1:5432/overlord`.
-  - Starts PostgreSQL, ensures the `overlord` database exists, runs Prisma `db push`, and runs Prisma `generate`.
+  - Starts PostgreSQL, ensures the `overlord` database exists, runs Prisma `db push` from `schema.prisma`, and runs Prisma `generate`.
   - Leaves PostgreSQL running by default.
 
 - `scripts/windows/db_run.mjs`
@@ -25,7 +25,7 @@ Windows helper scripts for provisioning and running a local portable PostgreSQL 
 
 ## Commands
 
-Bootstrap the local PostgreSQL runtime and leave it running:
+Bootstrap the local PostgreSQL runtime and leave it running. Use this only when the coordinator schema has not changed:
 
 ```powershell
 node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs
@@ -37,7 +37,7 @@ Bootstrap and force the coordinator `.env` database URL update:
 node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --force-env
 ```
 
-Bootstrap from a fresh data directory:
+Bootstrap from a fresh data directory. This is the required path after any coordinator persisted-schema change:
 
 ```powershell
 node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --reset-data --force-env
@@ -88,6 +88,9 @@ node overlord-be/overlord-be-db/scripts/windows/db_run.mjs status
 ## Notes
 
 - This helper is Windows-only in the current phase.
-- Prisma migrations are not treated as stable history in this phase; setup uses the current schema state.
+- `schema.prisma` is the only coordinator schema source in this phase.
+- Prisma migrations are not treated as stable history in this phase; setup uses the current Prisma schema state through `db push`.
+- After any coordinator persisted-schema edit, reset the local DB explicitly with `--reset-data` and rerun setup.
+- Do not treat incremental Prisma migration patches as the coordinator schema workflow in this phase.
 - `OVERLORD_PROJECT_DIR` overrides the workspace root used to locate `overlord-be-coordinator`.
 - `OVERLORD_TMP_DIR` overrides the shared workspace temp root used for the managed runtime layout.

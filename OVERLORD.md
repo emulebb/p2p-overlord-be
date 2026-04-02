@@ -93,7 +93,7 @@ p2p-overlord/
 │       ├── package.json
 │       ├── svelte.config.js
 │       ├── prisma/
-│       │   └── schema.prisma       # PostgreSQL schema + Prisma migrations
+│       │   └── schema.prisma       # PostgreSQL schema definition for reset + Prisma db push
 │       ├── openapi/
 │       │   └── internal-api.yaml   # Rust ↔ TS wire contract [F013]
 │       └── src/
@@ -389,7 +389,14 @@ download client integrations.
 
 ### 5.1 Database Schema [T001–T018]
 
-PostgreSQL, managed via Prisma migrations. SVC-001 is the exclusive writer.
+PostgreSQL, reset-first and rebuilt from `schema.prisma` via Prisma `db push` in the current phase.
+SVC-001 is the exclusive writer. Schema compatibility and migration-history preservation are not
+goals right now: after coordinator schema edits, reset the local DB and rebuild it from the current
+Prisma schema instead of preserving incremental patch chains.
+
+**Coordinator DB naming policy:** persisted PostgreSQL object names remain canonical `snake_case`.
+Prisma model and field names may stay `PascalCase` / `camelCase`, but they must map explicitly with
+`@@map` and `@map`. Raw SQL always targets the `snake_case` database names.
 
 ```sql
 -- ═══════════════════════════════════════════════════════════
@@ -1442,7 +1449,7 @@ and indexer sharding by hash prefix range remain in backlog [B004].
 - [P1-003] `nc-common`: `HashType`, `FileRecord`, `TorrentFile`, `ContentType`,
            `RegisterRequest`, `ResultBatch`, `IndexerStats`, `IndexerService` trait,
            `IndexerServer`, `CoordinatorClient` [F013]
-- [P1-004] Prisma schema: full DB schema [T001–T018], PostgreSQL migrations
+- [P1-004] Prisma schema: full DB schema [T001–T018], reset-first local DB rebuild via `db push`
 - [P1-005] SvelteKit coordinator skeleton: server setup, config load + filesystem watch [F001]
 - [P1-006] `A020` self-registration with (hostname, protocol) UUID dedup [F002] [F030]
 - [P1-007] `A021` result ingest + deduplication logic [F005]

@@ -92,6 +92,9 @@ async function main() {
   ensureDatabaseExists();
 
   if (!skipMigrate) {
+    if (!resetData) {
+      log('Running Prisma db push against the existing local DB; after coordinator schema edits, rerun this helper with --reset-data --force-env');
+    }
     log('Running Prisma db push');
     runPrismaCommand(['db', 'push', '--accept-data-loss', '--schema', PATHS.prismaSchemaFile]);
     log('Running Prisma generate');
