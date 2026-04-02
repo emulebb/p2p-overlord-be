@@ -1,10 +1,7 @@
-import type { KeepBusyCandidate } from '@prisma/client';
-
 import { getDb } from '$lib/server/db';
-import type { KeepBusyCandidateView } from '$lib/shared/internal-api';
+import type { HashType, KeepBusyCandidateView, SearchKind } from '$lib/shared/internal-api';
 
-export type KeepBusyCandidateInput = {
-	query: string;
+type KeepBusyCandidateSource = {
 	rawTitle: string;
 	sourceId: string;
 	sourceLabel: string;
@@ -13,8 +10,72 @@ export type KeepBusyCandidateInput = {
 	seenAt?: Date;
 };
 
+export type KeywordKeepBusyCandidateInput = KeepBusyCandidateSource & {
+	kind?: 'keyword';
+	query: string;
+};
+
+export type HashKeepBusyCandidateInput = KeepBusyCandidateSource & {
+	kind: 'source' | 'notes';
+	queryKey: string;
+	fileHash: HashType;
+	fileSize: number;
+};
+
+export type KeepBusyCandidateInput = KeywordKeepBusyCandidateInput | HashKeepBusyCandidateInput;
+
+type AcceptedKeepBusyCandidate = {
+	kind: SearchKind;
+	queryKey: string;
+	query: string | null;
+	fileHashType: string | null;
+	fileHashValue: string | null;
+	fileSize: bigint | null;
+	rawTitle: string;
+	sourceId: string;
+	sourceLabel: string;
+	sourceUrl: string;
+	sourceWeight: number;
+	seenAt: Date;
+};
+
+type PersistedKeepBusyCandidate = {
+	kind: string;
+	queryKey: string;
+	query: string | null;
+	fileHashType: string | null;
+	fileHashValue: string | null;
+	fileSize: bigint | null;
+	rawTitle: string;
+	sourceId: string;
+	sourceLabel: string;
+	sourceUrl: string;
+	sourceWeight: number;
+	firstSeenAt: Date;
+	lastSeenAt: Date;
+	seenCount: number;
+	dispatchCount: number;
+	successCount: number;
+	zeroResultCount: number;
+	lastResultCount: number;
+	lastDispatchedAt: Date | null;
+	lastCompletedAt: Date | null;
+	cooldownUntil: Date | null;
+	lastError: string | null;
+};
+
 function toIso(value: Date | null): string | null {
 	return value ? value.toISOString() : null;
+}
+
+function toNullableNumber(value: bigint | null): number | null {
+	return value === null ? null : Number(value);
+}
+
+function toNullableHash(kind: string | null, value: string | null): HashType | null {
+	return kind === 'ed2k' && typeof value === 'string' && value.length > 0
+		? { kind: 'ed2k', value }
+		: null;
 }
 
 /**
@@ -35,10 +96,71 @@ export function normalizeKeepBusyQuery(input: string): { queryKey: string; query
 	return { queryKey, query };
 }
 
-function toKeepBusyCandidateView(candidate: KeepBusyCandidate): KeepBusyCandidateView {
+function normalizeKeepBusyKey(input: string): string | null {
+	const key = input.trim().toLowerCase();
+	return key.length > 0 ? key : null;
+}
+
+function normalizeHashCandidate(input: HashKeepBusyCandidateInput): AcceptedKeepBusyCandidate | null {
+	const queryKey = normalizeKeepBusyKey(input.queryKey);
+	if (!queryKey || input.fileHash.kind !== 'ed2k' || input.fileHash.value.trim().length === 0) {
+		return null;
+	}
+	if (!Number.isFinite(input.fileSize) || input.fileSize <= 0) {
+		return null;
+	}
+
 	return {
+		kind: input.kind,
+		queryKey,
+		query: null,
+		fileHashType: input.fileHash.kind,
+		fileHashValue: input.fileHash.value.trim().toLowerCase(),
+		fileSize: BigInt(Math.floor(input.fileSize)),
+		rawTitle: input.rawTitle.trim() || `${input.kind} ${input.fileHash.value}`,
+		sourceId: input.sourceId,
+		sourceLabel: input.sourceLabel,
+		sourceUrl: input.sourceUrl,
+		sourceWeight: Math.max(1, Math.floor(input.sourceWeight)),
+		seenAt: input.seenAt ?? new Date()
+	};
+}
+
+function normalizeCandidate(input: KeepBusyCandidateInput): AcceptedKeepBusyCandidate | null {
+	if (input.kind === 'source' || input.kind === 'notes') {
+		return normalizeHashCandidate(input);
+	}
+
+	if (!('query' in input)) {
+		return null;
+	}
+	const normalized = normalizeKeepBusyQuery(input.query);
+	if (!normalized) {
+		return null;
+	}
+	return {
+		kind: 'keyword',
+		queryKey: normalized.queryKey,
+		query: normalized.query,
+		fileHashType: null,
+		fileHashValue: null,
+		fileSize: null,
+		rawTitle: input.rawTitle.trim() || normalized.query,
+		sourceId: input.sourceId,
+		sourceLabel: input.sourceLabel,
+		sourceUrl: input.sourceUrl,
+		sourceWeight: Math.max(1, Math.floor(input.sourceWeight)),
+		seenAt: input.seenAt ?? new Date()
+	};
+}
+
+function toKeepBusyCandidateView(candidate: PersistedKeepBusyCandidate): KeepBusyCandidateView {
+	return {
+		kind: candidate.kind as SearchKind,
 		queryKey: candidate.queryKey,
 		query: candidate.query,
+		file_hash: toNullableHash(candidate.fileHashType, candidate.fileHashValue),
+		file_size: toNullableNumber(candidate.fileSize),
 		rawTitle: candidate.rawTitle,
 		sourceId: candidate.sourceId,
 		sourceLabel: candidate.sourceLabel,
@@ -63,58 +185,67 @@ export async function upsertKeepBusyCandidates(
 ): Promise<KeepBusyCandidateView[]> {
 	const db = getDb();
 	const accepted = inputs
-		.map((input) => {
-			const normalized = normalizeKeepBusyQuery(input.query);
-			if (!normalized) {
-				return null;
-			}
-			return {
-				queryKey: normalized.queryKey,
-				query: normalized.query,
-				rawTitle: input.rawTitle.trim() || normalized.query,
-				sourceId: input.sourceId,
-				sourceLabel: input.sourceLabel,
-				sourceUrl: input.sourceUrl,
-				sourceWeight: Math.max(1, Math.floor(input.sourceWeight)),
-				seenAt: input.seenAt ?? new Date()
-			};
-		})
-		.filter((value): value is NonNullable<typeof value> => value !== null);
+		.map((input) => normalizeCandidate(input))
+		.filter((value): value is AcceptedKeepBusyCandidate => value !== null);
 
 	const candidates = await Promise.all(
-		accepted.map(({ queryKey, query, rawTitle, sourceId, sourceLabel, sourceUrl, sourceWeight, seenAt }) =>
-			db.keepBusyCandidate.upsert({
-				where: {
-					queryKey
-				},
-				create: {
-					queryKey,
-					query,
-					rawTitle,
-					sourceId,
-					sourceLabel,
-					sourceUrl,
-					sourceWeight,
-					firstSeenAt: seenAt,
-					lastSeenAt: seenAt
-				},
-				update: {
-					query,
-					rawTitle,
-					sourceId,
-					sourceLabel,
-					sourceUrl,
-					sourceWeight: Math.max(sourceWeight, 1),
-					lastSeenAt: seenAt,
-					seenCount: {
-						increment: 1
+		accepted.map(
+			({
+				kind,
+				queryKey,
+				query,
+				fileHashType,
+				fileHashValue,
+				fileSize,
+				rawTitle,
+				sourceId,
+				sourceLabel,
+				sourceUrl,
+				sourceWeight,
+				seenAt
+			}) =>
+				db.keepBusyCandidate.upsert({
+					where: {
+						queryKey
+					},
+					create: {
+						kind,
+						queryKey,
+						query,
+						fileHashType,
+						fileHashValue,
+						fileSize,
+						rawTitle,
+						sourceId,
+						sourceLabel,
+						sourceUrl,
+						sourceWeight,
+						firstSeenAt: seenAt,
+						lastSeenAt: seenAt
+					},
+					update: {
+						kind,
+						query,
+						fileHashType,
+						fileHashValue,
+						fileSize,
+						rawTitle,
+						sourceId,
+						sourceLabel,
+						sourceUrl,
+						sourceWeight: Math.max(sourceWeight, 1),
+						lastSeenAt: seenAt,
+						seenCount: {
+							increment: 1
+						}
 					}
-				}
-			})
+				})
 		)
 	);
 
-	return candidates.map(toKeepBusyCandidateView);
+	return candidates.map((candidate) =>
+		toKeepBusyCandidateView(candidate as PersistedKeepBusyCandidate)
+	);
 }
 
 export async function listRecentKeepBusyCandidates(limit = 12): Promise<KeepBusyCandidateView[]> {
@@ -123,7 +254,9 @@ export async function listRecentKeepBusyCandidates(limit = 12): Promise<KeepBusy
 		orderBy: [{ lastSeenAt: 'desc' }, { sourceWeight: 'desc' }],
 		take: limit
 	});
-	return candidates.map(toKeepBusyCandidateView);
+	return candidates.map((candidate) =>
+		toKeepBusyCandidateView(candidate as PersistedKeepBusyCandidate)
+	);
 }
 
 export async function listDispatchableKeepBusyCandidates(
@@ -138,7 +271,9 @@ export async function listDispatchableKeepBusyCandidates(
 		orderBy: [{ sourceWeight: 'desc' }, { lastSeenAt: 'desc' }],
 		take: limit
 	});
-	return candidates.map(toKeepBusyCandidateView);
+	return candidates.map((candidate) =>
+		toKeepBusyCandidateView(candidate as PersistedKeepBusyCandidate)
+	);
 }
 
 export async function recordKeepBusyDispatch(

@@ -11,6 +11,7 @@ import {
 	upsertKeepBusyCandidates
 } from '$lib/server/keep-busy-store';
 import logger from '$lib/server/logger';
+import { listTrendingSnoopDemand } from '$lib/server/snoop-store';
 import { dispatchSearchRequest } from '$lib/server/search-dispatch';
 import { getAgentActivity, getAgentInterfaceReport, getAgentStats, listRegistrations, storeKeepBusyStatus } from '$lib/server/state';
 import type { KeepBusyCandidateView, KeepBusyWorkerStatus, SearchRequest } from '$lib/shared/internal-api';
@@ -162,25 +163,43 @@ function scoreCandidate(candidate: KeepBusyCandidateView, now: Date): number {
 	);
 }
 
-function listSlackKadAgents(now: Date, perAgentMinGapSecs: number): string[] {
+/**
+ * Stored-term keyword dispatch should coexist with passive source replay. Use the per-family
+ * harvested keyword backlog when available so a deep source snoop queue does not suppress
+ * coordinator-issued keyword jobs.
+ */
+function keywordQueueDepth(indexerId: string): number | null {
+	const stats = getAgentStats(indexerId);
+	if (!stats) {
+		return null;
+	}
+	return stats.harvest_observability?.keyword_requests.queued_entries ?? stats.snoop_queue_depth;
+}
+
+function keepBusyActivityAllowsDispatch(indexerId: string): boolean {
+	const state = getAgentActivity(indexerId)?.state;
+	return state === 'idle' || state === 'passive_harvest_replay';
+}
+
+function listSlackKadAgents(now: Date, config = getKeepBusyConfig()): string[] {
 	const runtime = getRuntime();
 	return listRegistrations()
 		.filter((registration) => registration.protocol === 'kad2')
 		.filter((registration) => getAgentInterfaceReport(registration.indexer_id)?.p2p.state === 'applied')
-		.filter((registration) => getAgentActivity(registration.indexer_id)?.state === 'idle')
+		.filter((registration) => keepBusyActivityAllowsDispatch(registration.indexer_id))
 		.filter((registration) => {
 			const stats = getAgentStats(registration.indexer_id);
-			return Boolean(stats) && stats!.crawl_rate <= getKeepBusyConfig().crawlRateSlackThreshold;
+			return Boolean(stats) && stats!.crawl_rate <= config.crawlRateSlackThreshold;
 		})
 		.filter((registration) => {
-			const stats = getAgentStats(registration.indexer_id);
-			return Boolean(stats) && stats!.snoop_queue_depth <= getKeepBusyConfig().maxSnoopQueueDepth;
+			const queuedKeywords = keywordQueueDepth(registration.indexer_id);
+			return queuedKeywords !== null && queuedKeywords <= config.maxSnoopQueueDepth;
 		})
 		.filter((registration) => {
 			const lastDispatchAt = runtime.lastDispatchByAgent.get(registration.indexer_id);
 			return (
 				!lastDispatchAt ||
-				now.getTime() - lastDispatchAt >= perAgentMinGapSecs * 1000
+				now.getTime() - lastDispatchAt >= config.perAgentMinGapSecs * 1000
 			);
 		})
 		.map((registration) => registration.indexer_id);
@@ -208,30 +227,77 @@ async function ingestConfiguredSources(config = getKeepBusyConfig()): Promise<nu
 	return fetchedInputs.length;
 }
 
+/**
+ * Coordinator-persisted snoops preserve exact source and notes hashes plus file sizes, so they can
+ * be recycled into active keep-busy work items even after the agent-local passive queue has rotated.
+ * Harvested keyword snoops are not promoted here because the coordinator only sees the Kad target
+ * hash, not the original text query.
+ */
+async function ingestPersistedSnoopDemand(): Promise<number> {
+	const trending = await listTrendingSnoopDemand(64, 24);
+	const inputs: KeepBusyCandidateInput[] = trending.flatMap((entry) => {
+		if ((entry.family !== 'source' && entry.family !== 'notes') || entry.size === null) {
+			return [];
+		}
+		return [
+			{
+				kind: entry.family,
+				queryKey: `snoop:${entry.family}:${entry.logical_key}`,
+				fileHash: {
+					kind: 'ed2k',
+					value: entry.target
+				},
+				fileSize: entry.size,
+				rawTitle: entry.sample_name ?? `${entry.family} ${entry.target}`,
+				sourceId: `harvested_${entry.family}_demand`,
+				sourceLabel: `Harvested ${entry.family}`,
+				sourceUrl: '/api/snoop',
+				sourceWeight: Math.max(2, Math.min(50, entry.observed_count))
+			}
+		];
+	});
+
+	await upsertKeepBusyCandidates(inputs);
+	return inputs.length;
+}
+
 async function dispatchKeepBusyJobs(config = getKeepBusyConfig()): Promise<number> {
 	const now = new Date();
 	const candidates = (await listDispatchableKeepBusyCandidates(now, 64)).sort(
 		(left, right) => scoreCandidate(right, now) - scoreCandidate(left, now)
 	);
-	const slackAgents = listSlackKadAgents(now, config.perAgentMinGapSecs);
+	const slackAgents = listSlackKadAgents(now, config);
 	const runtime = getRuntime();
 	let jobsDispatched = 0;
-	const usedQueries = new Set<string>();
+	const usedCandidates = new Set<string>();
 
 	for (const indexerId of slackAgents) {
 		if (jobsDispatched >= config.maxJobsPerPoll) {
 			break;
 		}
-		const candidate = candidates.find((entry) => !usedQueries.has(entry.queryKey));
+		const candidate = candidates.find((entry) => !usedCandidates.has(entry.queryKey));
 		if (!candidate) {
 			break;
 		}
 
-		const request: SearchRequest = {
-			protocol: 'kad2',
-			kind: 'keyword',
-			query: candidate.query
-		};
+		const request: SearchRequest | null =
+			candidate.kind === 'keyword' && candidate.query
+				? {
+						protocol: 'kad2',
+						kind: 'keyword',
+						query: candidate.query
+					}
+				: candidate.kind !== 'keyword' && candidate.file_hash && candidate.file_size
+					? {
+							protocol: 'kad2',
+							kind: candidate.kind,
+							file_hash: candidate.file_hash,
+							file_size: candidate.file_size
+						}
+					: null;
+		if (!request) {
+			continue;
+		}
 		await dispatchSearchRequest(request, {
 			callbackOrigin: 'http://127.0.0.1:13300',
 			fetch: (input, init) => fetch(input, init),
@@ -241,7 +307,7 @@ async function dispatchKeepBusyJobs(config = getKeepBusyConfig()): Promise<numbe
 		});
 		await recordKeepBusyDispatch(candidate.queryKey, config.termCooldownSecs, now);
 		runtime.lastDispatchByAgent.set(indexerId, now.getTime());
-		usedQueries.add(candidate.queryKey);
+		usedCandidates.add(candidate.queryKey);
 		jobsDispatched += 1;
 	}
 
@@ -276,6 +342,7 @@ async function runKeepBusyCycle(): Promise<void> {
 	try {
 		await pruneExpiredKeepBusyCandidates(config.termTtlSecs);
 		const sourcesFetched = await ingestConfiguredSources(config);
+		const harvestedDemandSeen = await ingestPersistedSnoopDemand();
 		const jobsDispatched = await dispatchKeepBusyJobs(config);
 		storeKeepBusyStatus(
 			buildStatus(
@@ -283,7 +350,7 @@ async function runKeepBusyCycle(): Promise<void> {
 					started: runtime.started,
 					lastCompletedAt: new Date().toISOString(),
 					lastError: null,
-					lastSourcesFetched: sourcesFetched,
+					lastSourcesFetched: sourcesFetched + (harvestedDemandSeen > 0 ? 1 : 0),
 					lastJobsDispatched: jobsDispatched
 				},
 				config

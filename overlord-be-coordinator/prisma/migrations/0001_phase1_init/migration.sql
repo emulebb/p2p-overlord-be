@@ -150,8 +150,12 @@ CREATE TABLE harvest_replay_files (
 CREATE INDEX harvest_replay_files_file_id_idx ON harvest_replay_files(file_id);
 
 CREATE TABLE keep_busy_candidates (
+    kind TEXT NOT NULL DEFAULT 'keyword',
     query_key TEXT PRIMARY KEY,
-    query TEXT NOT NULL,
+    query TEXT NULL,
+    file_hash_type TEXT NULL,
+    file_hash_value TEXT NULL,
+    file_size BIGINT NULL,
     raw_title TEXT NOT NULL,
     source_id TEXT NOT NULL,
     source_label TEXT NOT NULL,

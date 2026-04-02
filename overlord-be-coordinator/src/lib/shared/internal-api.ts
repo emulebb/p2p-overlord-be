@@ -527,8 +527,11 @@ export type SnoopDemandHoleEntry = SnoopDemandEntry & {
 };
 
 export type KeepBusyCandidateView = {
+	kind: SearchKind;
 	queryKey: string;
-	query: string;
+	query: string | null;
+	file_hash: HashType | null;
+	file_size: number | null;
 	rawTitle: string;
 	sourceId: string;
 	sourceLabel: string;

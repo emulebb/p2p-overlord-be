@@ -194,8 +194,12 @@ model HarvestReplayFile {
 }
 
 model KeepBusyCandidate {
+  kind             String    @default("keyword")
   queryKey         String    @id @map("query_key")
-  query            String
+  query            String?
+  fileHashType     String?   @map("file_hash_type")
+  fileHashValue    String?   @map("file_hash_value")
+  fileSize         BigInt?   @map("file_size")
   rawTitle         String    @map("raw_title")
   sourceId         String    @map("source_id")
   sourceLabel      String    @map("source_label")

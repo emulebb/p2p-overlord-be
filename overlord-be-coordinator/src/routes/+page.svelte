@@ -541,26 +541,34 @@
 				</div>
 			</Panel>
 
-			<Panel
-				title="Keep-Busy Candidates"
-				subtitle="Recent auto-feed candidates from the web worker and manual UI additions."
-			>
-				{#if keepBusyCandidates.length > 0}
-					<div class="table-shell wm-shell">
-						<table class="wm-table">
-							<thead>
-								<tr>
-									<th>Query</th>
-									<th>Source</th>
-									<th>Seen</th>
-									<th>Dispatches</th>
-									<th>Results</th>
-								</tr>
+	<Panel
+		title="Keep-Busy Candidates"
+		subtitle="Recent web-fed, UI-added, and harvested-demand work items used by the coordinator keep-busy worker."
+	>
+		{#if keepBusyCandidates.length > 0}
+			<div class="table-shell wm-shell">
+				<table class="wm-table">
+					<thead>
+						<tr>
+							<th>Work Item</th>
+							<th>Source</th>
+							<th>Seen</th>
+							<th>Dispatches</th>
+							<th>Results</th>
+						</tr>
 							</thead>
 							<tbody>
 								{#each keepBusyCandidates as candidate}
 									<tr>
-										<td>{candidate.query}</td>
+										<td>
+											<div class="badge-row">
+												<StatusBadge tone="neutral" text={candidate.kind} />
+											</div>
+											<div>{candidate.query ?? candidate.rawTitle}</div>
+											{#if candidate.query === null && candidate.file_hash}
+												<div class="muted mono">{candidate.file_hash.value}</div>
+											{/if}
+										</td>
 										<td><StatusBadge tone="accent" text={candidate.sourceLabel} /></td>
 										<td>{formatTimestamp(candidate.lastSeenAt)}</td>
 										<td>{candidate.dispatchCount}</td>
