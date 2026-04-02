@@ -39,7 +39,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | `ITEM_004` | Finish oracle-like Kad transport and packet-tracking parity | `TODO` | `P1` | `kad_net` | `TODONEXTKAD` |
 | `ITEM_005` | Align passive source-search scheduling cadence and replay ordering with the oracle | `TODO` | `P1` | `kad_replay` | `TODO-20260322-001`, `TODONEXTKAD` |
 | `ITEM_006` | Preserve full snooped request shape for passive replay fidelity | `TODO` | `P1` | `kad_replay` | `TODONEXTKAD` |
-| `ITEM_007` | Wire active Kad notes search end to end | `TODO` | `P1` | `kad_notes` | `TODONEXTKAD` |
+| `ITEM_007` | Preserve per-author Kad notes results after live validation | `TODO` | `P1` | `kad_notes` | `TODONEXTKAD` |
 | `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `TODO` | `P1` | `kad_routing` | `TODONEXTKAD` |
 | `ITEM_009` | Rename misleading Kad proto semantic fields | `TODO` | `P2` | `kad_proto` | `TODONEXTKAD` |
 | `ITEM_010` | Complete ED2K server keyword-search parity on real servers | `TODO` | `P2` | `ed2k` | `TODO-20260322-001` |
@@ -120,14 +120,14 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Summary: The current snoop queue is still too target-centric to preserve all oracle-relevant keyword, source, and notes request details.
 - Next steps: Extend the stored request shape, keep conversion localized at the edge, and replay the same demand shape the network actually asked for.
 
-### `ITEM_007` — Wire active Kad notes search end to end
+### `ITEM_007` — Preserve per-author Kad notes results after live validation
 
 - Status: `TODO`
 - Priority: `P1`
 - Area: `kad_notes`
 - Source: `TODONEXTKAD`
-- Summary: Notes-search traversal exists in the Kad stack, but coordinator-triggered notes search is still not exposed end to end.
-- Next steps: Wire the request through the runtime, return real note results, and validate it against the live network.
+- Summary: Coordinator-triggered Kad notes search is already wired end to end and was validated live on April 2, 2026. The remaining gap is result modeling: note replies are still projected into file-centric search results, so distinct note authors would collapse onto one file record.
+- Next steps: Add a note-aware coordinator result shape that preserves author identity at ingest and API boundaries, then rerun live validation against a file that returns multiple notes.
 
 ### `ITEM_008` — Port routing `CanSplit` and per-bin `/24` clustering rules
 
