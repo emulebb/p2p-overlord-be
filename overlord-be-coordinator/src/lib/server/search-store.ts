@@ -18,7 +18,9 @@ import type {
 	SearchJob,
 	SearchJobOrigin,
 	SearchJobStatus,
-	SearchJobStatusView
+	SearchJobStatusView,
+	Source,
+	TagEntry
 } from '$lib/shared/internal-api';
 
 const FILE_INCLUDE = {
@@ -74,6 +76,15 @@ type IndexedFileCountRow = {
 	count: string;
 };
 
+type NormalizedFileIngestRecord = {
+	primaryHashValue: string;
+	size: number | null;
+	hashes: HashType[];
+	names: string[];
+	tags: TagEntry[];
+	sources: Source[];
+};
+
 const DEFAULT_INDEXED_FILE_PAGE_SIZE = 25;
 const MAX_INDEXED_FILE_PAGE_SIZE = 100;
 
@@ -101,6 +112,92 @@ function parseHash(value: Prisma.JsonValue | null): HashType | null {
 
 function serializeHash(value: HashType | null): Prisma.InputJsonValue | Prisma.NullTypes.DbNull {
 	return value ? (value as Prisma.InputJsonValue) : Prisma.DbNull;
+}
+
+function normalizedFileSize(current: number | null, incoming: number | null): number | null {
+	if (incoming === null) {
+		return current;
+	}
+	if (current === null) {
+		return incoming;
+	}
+	return Math.max(current, incoming);
+}
+
+function dedupeInputTags(tags: TagEntry[]): TagEntry[] {
+	const seen = new Map<string, TagEntry>();
+	for (const tag of tags) {
+		seen.set(`${tag.key}:${JSON.stringify(tag.value)}`, tag);
+	}
+	return Array.from(seen.values());
+}
+
+function dedupeInputSources(sources: Source[]): Source[] {
+	const seen = new Map<string, Source>();
+	for (const source of sources) {
+		seen.set(`${source.protocol}:${source.address}:${JSON.stringify(source.extra)}`, source);
+	}
+	return Array.from(seen.values());
+}
+
+function normalizeFileRecords(records: FileRecord[]): NormalizedFileIngestRecord[] {
+	const merged = new Map<
+		string,
+		{
+			size: number | null;
+			hashes: Map<string, HashType>;
+			names: Set<string>;
+			tags: Map<string, TagEntry>;
+			sources: Map<string, Source>;
+		}
+	>();
+
+	for (const record of records) {
+		const primaryHash = record.hashes.find((hash) => hash.kind === 'ed2k');
+		if (!primaryHash) {
+			continue;
+		}
+
+		let entry = merged.get(primaryHash.value);
+		if (!entry) {
+			entry = {
+				size: null,
+				hashes: new Map<string, HashType>(),
+				names: new Set<string>(),
+				tags: new Map<string, TagEntry>(),
+				sources: new Map<string, Source>()
+			};
+			merged.set(primaryHash.value, entry);
+		}
+
+		entry.size = normalizedFileSize(entry.size, record.size);
+		for (const hash of record.hashes) {
+			entry.hashes.set(`${hash.kind}:${hash.value}`, hash);
+		}
+		for (const name of record.names) {
+			if (name.trim().length > 0) {
+				entry.names.add(name);
+			}
+		}
+		for (const tag of dedupeInputTags(record.tags)) {
+			entry.tags.set(`${tag.key}:${JSON.stringify(tag.value)}`, tag);
+		}
+		for (const source of dedupeInputSources(record.sources)) {
+			entry.sources.set(
+				`${source.protocol}:${source.address}:${JSON.stringify(source.extra)}`,
+				source
+			);
+		}
+	}
+
+	return Array.from(merged.entries()).map(([primaryHashValue, entry]) => ({
+		primaryHashValue,
+		size: entry.size,
+		hashes: Array.from(entry.hashes.values()),
+		names: Array.from(entry.names.values()),
+		tags: Array.from(entry.tags.values()),
+		sources: Array.from(entry.sources.values())
+	}));
 }
 
 function dedupeTags(tags: FileWithRelations['tags']): FileRecord['tags'] {
@@ -455,28 +552,202 @@ async function upsertFile(
 		});
 	}
 
-	for (const tag of record.tags) {
-		await tx.fileTag.create({
-			data: {
+	if (record.tags.length > 0) {
+		await tx.fileTag.createMany({
+			data: record.tags.map((tag) => ({
 				fileId: resolvedFileId,
 				key: tag.key,
 				value: tag.value as Prisma.InputJsonValue
-			}
+			}))
 		});
 	}
 
-	for (const source of record.sources) {
-		await tx.source.create({
-			data: {
+	if (record.sources.length > 0) {
+		await tx.source.createMany({
+			data: record.sources.map((source) => ({
 				fileId: resolvedFileId,
 				protocol: source.protocol,
 				address: source.address,
 				extra: source.extra as Prisma.InputJsonValue
-			}
+			}))
 		});
 	}
 
 	return fileId;
+}
+
+async function resolveFileIdsForBatch(
+	tx: Prisma.TransactionClient,
+	records: NormalizedFileIngestRecord[]
+): Promise<Map<string, bigint>> {
+	const primaryHashes = records.map((record) => record.primaryHashValue);
+	const existingHashes = await tx.fileHash.findMany({
+		where: {
+			hashType: 'ed2k',
+			hashValue: {
+				in: primaryHashes
+			}
+		},
+		select: {
+			hashValue: true,
+			fileId: true
+		}
+	});
+
+	const fileIdsByPrimaryHash = new Map(
+		existingHashes.map((record) => [record.hashValue, record.fileId] as const)
+	);
+
+	for (const record of records) {
+		if (fileIdsByPrimaryHash.has(record.primaryHashValue)) {
+			continue;
+		}
+		const created = await tx.file.create({
+			data: {
+				size: record.size === null ? null : BigInt(record.size)
+			}
+		});
+		fileIdsByPrimaryHash.set(record.primaryHashValue, created.id);
+	}
+
+	return fileIdsByPrimaryHash;
+}
+
+async function touchFilesForBatch(
+	tx: Prisma.TransactionClient,
+	records: NormalizedFileIngestRecord[],
+	fileIdsByPrimaryHash: Map<string, bigint>
+): Promise<void> {
+	const updates = records
+		.map((record) => {
+			const fileId = fileIdsByPrimaryHash.get(record.primaryHashValue);
+			return fileId === undefined
+				? null
+				: Prisma.sql`(${fileId}, ${record.size === null ? null : BigInt(record.size)})`;
+		})
+		.filter((row): row is Prisma.Sql => row !== null);
+
+	if (updates.length === 0) {
+		return;
+	}
+
+	await tx.$executeRaw(Prisma.sql`
+		UPDATE files AS f
+		SET
+			last_seen = CURRENT_TIMESTAMP,
+			size = COALESCE(input.size, f.size)
+		FROM (
+			VALUES ${Prisma.join(updates)}
+		) AS input(id, size)
+		WHERE f.id = input.id
+	`);
+}
+
+async function ingestPassiveKeywordHarvestBatch(
+	tx: Prisma.TransactionClient,
+	batch: ResultBatch,
+	harvestContext: HarvestReplayContext
+): Promise<void> {
+	await ensureHarvestReplay(tx, batch.indexer_id, harvestContext);
+
+	const records = normalizeFileRecords(batch.files);
+	if (records.length === 0) {
+		return;
+	}
+
+	const fileIdsByPrimaryHash = await resolveFileIdsForBatch(tx, records);
+	await touchFilesForBatch(tx, records, fileIdsByPrimaryHash);
+
+	const fileHashes = records.flatMap((record) => {
+		const fileId = fileIdsByPrimaryHash.get(record.primaryHashValue);
+		if (fileId === undefined) {
+			return [];
+		}
+		return record.hashes.map((hash) => ({
+			hashType: hash.kind,
+			hashValue: hash.value,
+			fileId
+		}));
+	});
+	if (fileHashes.length > 0) {
+		await tx.fileHash.createMany({
+			data: fileHashes,
+			skipDuplicates: true
+		});
+	}
+
+	const fileNames = records.flatMap((record) => {
+		const fileId = fileIdsByPrimaryHash.get(record.primaryHashValue);
+		if (fileId === undefined) {
+			return [];
+		}
+		return record.names.map((name) => ({
+			fileId,
+			name
+		}));
+	});
+	if (fileNames.length > 0) {
+		await tx.fileName.createMany({
+			data: fileNames,
+			skipDuplicates: true
+		});
+	}
+
+	const fileTags = records.flatMap((record) => {
+		const fileId = fileIdsByPrimaryHash.get(record.primaryHashValue);
+		if (fileId === undefined) {
+			return [];
+		}
+		return record.tags.map((tag) => ({
+			fileId,
+			key: tag.key,
+			value: tag.value as Prisma.InputJsonValue
+		}));
+	});
+	if (fileTags.length > 0) {
+		await tx.fileTag.createMany({
+			data: fileTags
+		});
+	}
+
+	const fileSources = records.flatMap((record) => {
+		const fileId = fileIdsByPrimaryHash.get(record.primaryHashValue);
+		if (fileId === undefined) {
+			return [];
+		}
+		return record.sources.map((source) => ({
+			fileId,
+			protocol: source.protocol,
+			address: source.address,
+			extra: source.extra as Prisma.InputJsonValue
+		}));
+	});
+	if (fileSources.length > 0) {
+		await tx.source.createMany({
+			data: fileSources
+		});
+	}
+
+	const replayLinks = records
+		.map((record) => {
+			const fileId = fileIdsByPrimaryHash.get(record.primaryHashValue);
+			return fileId === undefined
+				? null
+				: {
+						replayId: harvestContext.replay_id,
+						fileId
+					};
+		})
+		.filter(
+			(link): link is { replayId: string; fileId: bigint } =>
+				link !== null
+		);
+	if (replayLinks.length > 0) {
+		await tx.harvestReplayFile.createMany({
+			data: replayLinks,
+			skipDuplicates: true
+		});
+	}
 }
 
 async function ensureHarvestReplay(
@@ -630,6 +901,11 @@ export async function ingestResultBatch(batch: ResultBatch): Promise<void> {
 	const jobId = batch.job_id;
 	const harvestContext = batch.harvest_context ?? null;
 	const snapshot = await db.$transaction(async (tx) => {
+		if (jobId === null && harvestContext?.family === 'keyword') {
+			await ingestPassiveKeywordHarvestBatch(tx, batch, harvestContext);
+			return null;
+		}
+
 		if (harvestContext) {
 			await ensureHarvestReplay(tx, batch.indexer_id, harvestContext);
 		}

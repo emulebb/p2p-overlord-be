@@ -400,6 +400,10 @@ export type KadPassiveReplayObservability = {
 	widened_cycles: number;
 	posted_batches: number;
 	post_failures: number;
+	enqueue_backpressure_events: number;
+	post_callbacks: number;
+	enqueue_wait_millis: number;
+	post_latency_millis: number;
 	last_started_at: string | null;
 	last_completed_at: string | null;
 	last_idle_at: string | null;
@@ -409,6 +413,8 @@ export type KadPassiveReplayObservability = {
 	last_restrictive_bytes: number | null;
 	last_result_count: number;
 	last_batches_posted: number;
+	last_enqueue_wait_millis: number;
+	last_post_latency_millis: number;
 	last_tiers_attempted: number;
 	last_widest_responder_ceiling: number | null;
 	last_widened: boolean;

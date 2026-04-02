@@ -870,6 +870,10 @@ components:
           widened_cycles,
           posted_batches,
           post_failures,
+          enqueue_backpressure_events,
+          post_callbacks,
+          enqueue_wait_millis,
+          post_latency_millis,
           last_started_at,
           last_completed_at,
           last_idle_at,
@@ -879,6 +883,8 @@ components:
           last_restrictive_bytes,
           last_result_count,
           last_batches_posted,
+          last_enqueue_wait_millis,
+          last_post_latency_millis,
           last_tiers_attempted,
           last_widest_responder_ceiling,
           last_widened,
@@ -905,6 +911,18 @@ components:
           type: integer
           format: int64
         post_failures:
+          type: integer
+          format: int64
+        enqueue_backpressure_events:
+          type: integer
+          format: int64
+        post_callbacks:
+          type: integer
+          format: int64
+        enqueue_wait_millis:
+          type: integer
+          format: int64
+        post_latency_millis:
           type: integer
           format: int64
         last_started_at:
@@ -935,6 +953,10 @@ components:
         last_result_count:
           type: integer
         last_batches_posted:
+          type: integer
+        last_enqueue_wait_millis:
+          type: integer
+        last_post_latency_millis:
           type: integer
         last_tiers_attempted:
           type: integer
