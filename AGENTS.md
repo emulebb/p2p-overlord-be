@@ -15,6 +15,11 @@
   - use Prisma `db push`
   - do not treat incremental Prisma migrations as the schema workflow
 - Keep reusable operational tooling in `../overlord-tooling`, not inline in issue-specific commands.
+- Keep the tracked-file privacy guard passing locally and in CI.
+  - Do not commit local user-profile paths such as `C:\Users\...`, `C:/Users/...`, `/Users/...`, or `/home/...`.
+  - Do not commit tracked filenames that embed configured personal identifiers.
+  - Do not hardcode real personal identifiers in tracked policy files; use local untracked policy or environment configuration for repo-specific identifier checks.
+  - Run `scripts/windows/tracked_file_privacy_guard.ps1` after touching docs, scripts, config, or generated support files.
 - Respect the workspace line-ending policy:
   - tracked text files use LF by default
   - `.ps1`, `.cmd`, and `.bat` may use CRLF

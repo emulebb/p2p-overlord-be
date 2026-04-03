@@ -20,3 +20,8 @@ Canonical documentation home for `overlord-be`.
 
 - [Active Backlog](../BACKLOG.md)
 - [Backlog Archive](../BACKLOG_ARCHIVE.md)
+
+## Repo Guards
+
+- `../scripts/windows/tracked_file_privacy_guard.ps1` validates tracked files
+  for local user-profile path leaks and configured personal-name filename leaks.
