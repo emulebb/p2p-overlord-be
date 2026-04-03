@@ -14,7 +14,7 @@
   - keep `schema.prisma` authoritative
   - use Prisma `db push`
   - do not treat incremental Prisma migrations as the schema workflow
-- Keep reusable operational tooling in `../overlord-tooling`, not inline in issue-specific commands.
+- Keep reusable operational tooling in `../p2p-overlord-tooling`, not inline in issue-specific commands.
 - Keep the tracked-file privacy guard passing locally and in CI.
   - Do not commit local user-profile paths such as `C:\Users\...`, `C:/Users/...`, `/Users/...`, or `/home/...`.
   - Do not commit tracked filenames that embed configured personal identifiers.
