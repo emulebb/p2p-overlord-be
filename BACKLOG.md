@@ -25,10 +25,10 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 | Status | Count |
 |---|---:|
-| `IN_PROGRESS` | 1 |
-| `TODO` | 28 |
+| `IN_PROGRESS` | 2 |
+| `TODO` | 26 |
 | `BLOCKED` | 0 |
-| `DONE` | 1 |
+| `DONE` | 2 |
 | `REJECTED` | 0 |
 
 | ID | Title | Status | Priority | Area | Source |
@@ -41,8 +41,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | `ITEM_006` | Preserve full snooped request shape for passive replay fidelity | `TODO` | `P1` | `kad_replay` | `TODONEXTKAD` |
 | `ITEM_007` | Preserve per-author Kad notes results after live validation | `TODO` | `P1` | `kad_notes` | `TODONEXTKAD` |
 | `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `DONE` | `P1` | `kad_routing` | `TODONEXTKAD` |
-| `ITEM_009` | Rename misleading Kad proto semantic fields | `TODO` | `P2` | `kad_proto` | `TODONEXTKAD` |
-| `ITEM_010` | Complete ED2K server keyword-search parity on real servers | `TODO` | `P2` | `ed2k` | `TODO-20260322-001` |
+| `ITEM_009` | Rename misleading Kad proto semantic fields | `DONE` | `P2` | `kad_proto` | `TODONEXTKAD` |
+| `ITEM_010` | Drive ED2K parity beyond server search toward native sharing and transfer | `IN_PROGRESS` | `P2` | `ed2k` | `TODO-20260322-001` |
 | `ITEM_011` | Add Prometheus metrics and Grafana dashboards | `TODO` | `P3` | `observability` | `OVERLORD:B001` |
 | `ITEM_012` | Implement real password login behind the auth stub | `TODO` | `P3` | `auth` | `OVERLORD:B002` |
 | `ITEM_013` | Add content hash blocklist integration | `TODO` | `P3` | `safety` | `OVERLORD:B003` |
@@ -140,21 +140,21 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 ### `ITEM_009` — Rename misleading Kad proto semantic fields
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P2`
 - Area: `kad_proto`
 - Source: `TODONEXTKAD`
-- Summary: Some wire-correct proto fields still expose the wrong mental model in Rust, which increases maintenance risk during parity work.
-- Next steps: Rename the misleading fields, update call sites, and keep the wire shape unchanged.
+- Summary: The remaining documented Kad semantic aliases were renamed to match oracle meaning directly, and the docs/code policy is now explicit that oracle naming wins with commentary layered on top.
+- Next steps: Archive this item out of the active backlog on the next cleanup pass. Treat future naming drift as follow-up parity bugs, not unfinished legacy cleanup.
 
-### `ITEM_010` — Complete ED2K server keyword-search parity on real servers
+### `ITEM_010` — Drive ED2K parity beyond server search toward native sharing and transfer
 
-- Status: `TODO`
+- Status: `IN_PROGRESS`
 - Priority: `P2`
 - Area: `ed2k`
 - Source: `TODO-20260322-001`
-- Summary: The ED2K active keyword path is wired through job lifecycle and result posting, but real server searches are still timing out without `OP_SEARCHRESULT`.
-- Next steps: Tighten real-server handshake and request parity, then expand into source and notes search only after keyword results work reliably.
+- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, and background-session reuse are now wired. The real end goal is full native ED2K parity in this repo: server search, peer search, sharing, upload, and download without depending on an external client.
+- Next steps: Keep tightening oracle parity in the server session, then add the missing peer transfer state machines, shared-file serving, download persistence, verification, and upload/download control-plane support in staged milestones.
 
 ## Deferred Product And Platform Backlog
 
@@ -200,8 +200,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Priority: `P3`
 - Area: `network_participation`
 - Source: `OVERLORD:B005`
-- Summary: Extend outbound participation beyond current seeding slices into broader sharing behavior.
-- Next steps: Define per-network sharing policy and guard it with protocol-appropriate acceptance checks.
+- Summary: Extend outbound participation beyond current seeding slices into broader native sharing behavior, including ED2K/Kad source presence and eventual upload serving parity.
+- Next steps: Define per-network sharing policy, shared-catalog ownership, and protocol-appropriate acceptance checks so native upload participation can expand without drifting from oracle behavior.
 
 ### `ITEM_016` — Add native in-process downloaders
 
@@ -209,8 +209,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Priority: `P4`
 - Area: `downloaders`
 - Source: `OVERLORD:B006`
-- Summary: Add in-process downloader implementations as alternatives to the external download-client abstraction.
-- Next steps: Decide protocol order and preserve the current external-client path until native implementations are credible.
+- Summary: Add in-process downloader implementations so the workspace can converge on native protocol parity instead of relying on an external download-client abstraction.
+- Next steps: Start with the ED2K transfer core, part-file persistence, and verification path, then preserve the current external-client path only until the native downloader is credible.
 
 ### `ITEM_017` — Add live queue rate adjustment from the frontend
 
