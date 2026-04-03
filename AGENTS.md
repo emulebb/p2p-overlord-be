@@ -14,7 +14,7 @@
   - keep `schema.prisma` authoritative
   - use Prisma `db push`
   - do not treat incremental Prisma migrations as the schema workflow
-- Keep reusable operational tooling in `../overlord-helpers`, not inline in issue-specific commands.
+- Keep reusable operational tooling in `../overlord-tooling`, not inline in issue-specific commands.
 - Respect the workspace line-ending policy:
   - tracked text files use LF by default
   - `.ps1`, `.cmd`, and `.bat` may use CRLF
