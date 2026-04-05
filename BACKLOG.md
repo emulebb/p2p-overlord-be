@@ -210,7 +210,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Area: `downloaders`
 - Source: `OVERLORD:B006`
 - Summary: Add in-process downloader implementations so the workspace can converge on native protocol parity instead of relying on an external download-client abstraction.
-- Next steps: Start with the ED2K transfer core, part-file persistence, and verification path, then preserve the current external-client path only until the native downloader is credible.
+- Next steps: Start with the ED2K transfer core, piece-store plus resume-manifest persistence, and verification path, then preserve the current external-client path only until the native downloader is credible.
 
 ### `ITEM_017` — Add live queue rate adjustment from the frontend
 
