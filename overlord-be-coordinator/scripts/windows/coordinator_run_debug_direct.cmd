@@ -18,6 +18,6 @@ SET NODE_OPTIONS=--inspect
 
 ECHO OVERLORD_PROJECT_DIR = [ %OVERLORD_PROJECT_DIR% ] [ %TIME% ]
 
-CD /D %OVERLORD_PROJECT_DIR%\overlord-be\overlord-be-coordinator
+CD /D %OVERLORD_PROJECT_DIR%\p2p-overlord-be\overlord-be-coordinator
 
 node node_modules\vite\bin\vite.js dev --host 0.0.0.0 --port 13300 --strictPort --logLevel info 1>%OVERLORD_LOG_DIR%\coordinator_stdout.log 2>%OVERLORD_LOG_DIR%\coordinator_stderr.log
