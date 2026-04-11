@@ -42,7 +42,7 @@ export function resolveWorkspaceTmpDir() {
 const workspaceProjectDir = resolveWorkspaceProjectDir();
 const workspaceTmpDir = resolveWorkspaceTmpDir();
 const runtimeDir = path.join(workspaceTmpDir, 'overlord-be-db', 'runtime');
-const coordinatorDir = path.join(workspaceProjectDir, 'overlord-be', 'overlord-be-coordinator');
+const coordinatorDir = path.join(workspaceProjectDir, 'p2p-overlord-be', 'overlord-be-coordinator');
 
 export const DEFAULTS = {
   host: '127.0.0.1',

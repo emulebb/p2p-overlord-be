@@ -28,55 +28,55 @@ Windows helper scripts for provisioning and running a local portable PostgreSQL 
 Bootstrap the local PostgreSQL runtime and leave it running. Use this only when the coordinator schema has not changed:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs
 ```
 
 Bootstrap and force the coordinator `.env` database URL update:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --force-env
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --force-env
 ```
 
 Bootstrap from a fresh data directory. This is the required path after any coordinator persisted-schema change:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --reset-data --force-env
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --reset-data --force-env
 ```
 
 Bootstrap but skip Prisma schema sync:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --skip-migrate
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --skip-migrate
 ```
 
 Bootstrap and stop PostgreSQL at the end:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --stop
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --stop
 ```
 
 Start the managed PostgreSQL instance:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_run.mjs start
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs start
 ```
 
 Stop the managed PostgreSQL instance:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_run.mjs stop
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs stop
 ```
 
 Restart the managed PostgreSQL instance:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_run.mjs restart
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs restart
 ```
 
 Show the managed PostgreSQL status:
 
 ```powershell
-node overlord-be/overlord-be-db/scripts/windows/db_run.mjs status
+node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs status
 ```
 
 ## Runtime Layout
