@@ -1,25 +1,19 @@
 # Backend Repo Rules
 
-- Follow the shared workspace guidance from `../AGENTS.md` in addition to this file.
+- Follow the shared workspace policy in
+  `../p2p-overlord-tooling/docs/WORKSPACE_POLICY.md`.
 - Use `docs/README.md` as the canonical backend docs home.
 - Use `BACKLOG.md` in this repo as the canonical active backlog.
-- Use `overlord-be-coordinator/scripts/windows/coordinator_quality.ps1` as the canonical local quality gate for coordinator changes.
+- Use `overlord-be-coordinator/scripts/windows/coordinator_quality.ps1` as the
+  canonical local coordinator quality gate.
 - The conservative coordinator baseline is:
   - `npm run check`
   - `npm run prisma:validate`
   - `npm run prisma:generate`
-- For coordinator persisted-schema edits, also reset and rebuild the local DB through `overlord-be-db` after the schema change.
+- For persisted-schema edits, also reset and rebuild the local DB through
+  `overlord-be-db`.
 - Persisted coordinator database objects must remain `snake_case`.
-- Prisma is the translation layer and the only coordinator schema source in this phase:
+- Prisma remains the coordinator schema source:
   - keep `schema.prisma` authoritative
   - use Prisma `db push`
   - do not treat incremental Prisma migrations as the schema workflow
-- Keep reusable operational tooling in `../p2p-overlord-tooling`, not inline in issue-specific commands.
-- Keep the tracked-file privacy guard passing locally and in CI.
-  - Do not commit local user-profile paths such as `C:\Users\...`, `C:/Users/...`, `/Users/...`, or `/home/...`.
-  - Do not commit tracked filenames that embed configured personal identifiers.
-  - Do not hardcode real personal identifiers in tracked policy files; use local untracked policy or environment configuration for repo-specific identifier checks.
-  - Run `scripts/windows/tracked_file_privacy_guard.ps1` after touching docs, scripts, config, or generated support files.
-- Respect the workspace line-ending policy:
-  - tracked text files use LF by default
-  - `.ps1`, `.cmd`, and `.bat` may use CRLF
