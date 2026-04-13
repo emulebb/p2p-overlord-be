@@ -144,9 +144,9 @@ All ports are configurable via the central TOML. See [docs/CONFIGURATION.md](doc
 Use repo-local quality entrypoints before finishing changes:
 
 - Repo-local rules are tracked in `./AGENTS.md`.
-- Agents repo: run `overlord-agents/scripts/windows/rust_quality.ps1`
-- Coordinator repo: run `overlord-be/overlord-be-coordinator/scripts/windows/coordinator_quality.ps1`
-- Backend repo privacy guard: run `overlord-be/scripts/windows/tracked_file_privacy_guard.ps1`
+- Agents repo: run `p2p-overlord-agents/scripts/windows/rust_quality.ps1`
+- Coordinator repo: run `p2p-overlord-be/overlord-be-coordinator/scripts/windows/coordinator_quality.ps1`
+- Backend repo privacy guard: run `p2p-overlord-be/scripts/windows/tracked_file_privacy_guard.ps1`
 
 Coordinator baseline details:
 

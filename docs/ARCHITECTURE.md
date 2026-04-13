@@ -39,8 +39,8 @@ workspace and on GitHub:
 - `overlord-be-*` for backend/core services
 - `overlord-agent-*` for protocol agents and their shared Rust support crates
 
-**Repo layout policy:** backend services live under `overlord-be/`, while all Rust agents live
-together under an `overlord-agents/` subfolder.
+**Repo layout policy:** backend services live under `p2p-overlord-be/`, while
+all Rust agents live together under a `p2p-overlord-agents/` subfolder.
 
 ---
 
@@ -48,7 +48,7 @@ together under an `overlord-agents/` subfolder.
 
 ```
 p2p-overlord/
-├── overlord-be/
+├── p2p-overlord-be/
 │   └── overlord-be-coordinator/    # SVC-001: SvelteKit/Node.js coordinator + UI
 │       ├── package.json
 │       ├── svelte.config.js
@@ -61,9 +61,9 @@ p2p-overlord/
 │           │   ├── server/         # server-only: DB, indexer clients, download manager
 │           │   └── shared/         # types generated from internal-api.yaml
 │           └── routes/             # SvelteKit file-based routing (pages + API endpoints)
-├── docs/                       # canonical backend/spec docs
+│   ├── docs/                       # canonical backend/spec docs
 │   └── README.md               # curated docs landing page
-├── overlord-agents/            # Rust agents repo contents
+├── p2p-overlord-agents/        # Rust agents repo contents
 │   ├── Cargo.toml              # workspace root (Rust agents only)
 │   ├── docs/                   # canonical agents/protocol docs
 │   ├── overlord.toml.example   # annotated reference config
@@ -76,7 +76,7 @@ p2p-overlord/
 ```
 
 **No separate frontend package.** The SvelteKit app inside
-`overlord-be/overlord-be-coordinator/`
+`p2p-overlord-be/overlord-be-coordinator/`
 is the frontend.
 It SSR-renders pages on the Node.js coordinator process and connects back to its own API
 routes. No cross-origin concerns; no separate deployment artifact.
@@ -131,7 +131,7 @@ Multiple instances of the same indexer service can register simultaneously [F030
 Library crate shared by all Rust indexer services. Contains types, the `IndexerService`
 trait, and HTTP helpers so each indexer binary is ~50 lines of glue code.
 
-**Type contract with the coordinator [F013]:** `overlord-be/overlord-be-coordinator/openapi/internal-api.yaml` is
+**Type contract with the coordinator [F013]:** `p2p-overlord-be/overlord-be-coordinator/openapi/internal-api.yaml` is
 the canonical schema for all coordinator ↔ indexer wire messages. The Rust types in
 `overlord-agent-common` are kept in sync with this spec. TypeScript types inside the coordinator are
 generated via `openapi-typescript`. CI verifies both sides match the spec.
