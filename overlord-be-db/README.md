@@ -2,6 +2,8 @@
 
 Windows helper scripts for provisioning and running a local portable PostgreSQL instance for `overlord-be-coordinator`.
 
+This directory is a backend-owned ops/runtime helper, not a standalone npm package.
+
 ## Files
 
 - `scripts/windows/db_setup.mjs`
@@ -88,6 +90,7 @@ node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs status
 ## Notes
 
 - This helper is Windows-only in the current phase.
+- This helper is part of the backend repo surface, but it is not a separately packaged application.
 - `schema.prisma` is the only coordinator schema source in this phase.
 - Prisma migrations are not treated as stable history in this phase; setup uses the current Prisma schema state through `db push`.
 - After any coordinator persisted-schema edit, reset the local DB explicitly with `--reset-data` and rerun setup.

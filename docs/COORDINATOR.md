@@ -26,7 +26,8 @@ download client integrations.
 PostgreSQL, reset-first and rebuilt from `schema.prisma` via Prisma `db push` in the current phase.
 SVC-001 is the exclusive writer. Schema compatibility and migration-history preservation are not
 goals right now: after coordinator schema edits, reset the local DB and rebuild it from the current
-Prisma schema instead of preserving incremental patch chains.
+Prisma schema instead of preserving incremental patch chains. Tracked migration history is not part
+of the active coordinator package surface in this phase.
 
 **Coordinator DB naming policy:** persisted PostgreSQL object names remain canonical `snake_case`.
 Prisma model and field names may stay `PascalCase` / `camelCase`, but they must map explicitly with

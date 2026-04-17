@@ -5,11 +5,24 @@
 
 See [docs/README.md](docs/README.md) for the structured backend specification.
 
+Current repo surface:
+
+- `overlord-be-coordinator` is the only formal Node package in this repo today.
+- `overlord-be-db` is a Windows-only local DB runtime helper, not a separate package.
+- The broader multi-protocol service map below remains the target-state architecture. Today the in-tree runtime surface is the coordinator plus `overlord-agent-emule` from `p2p-overlord-agents`.
+
 ---
 
 ## About
 
-`p2p-overlord` is a microservices system that passively and actively harvests file metadata from five P2P networks simultaneously — KAD, ED2K, BitTorrent DHT, Gnutella G2, and IPFS. It runs a coordinator service (SvelteKit/Node.js) that owns the PostgreSQL database, exposes a unified REST API and server-rendered frontend, and orchestrates a fleet of stateless Rust indexer agents — one per protocol. Indexers only need to know the coordinator URL; the coordinator handles job dispatch, config push, cross-protocol deduplication, and download management via aria2 or qBittorrent. The same file found across multiple networks collapses into a single database record with multiple source sets. Designed to run on one machine and scale out horizontally.
+`p2p-overlord` is a microservices system that targets passive and active file-metadata harvest across KAD, ED2K, BitTorrent DHT, Gnutella G2, and IPFS. The target architecture keeps one coordinator service (SvelteKit/Node.js) in charge of PostgreSQL, the REST API, the SSR frontend, and cross-protocol intelligence while Rust indexer agents specialize per protocol family. The current in-tree implementation is narrower: the coordinator is present in this repo today, and the current agent workspace in `p2p-overlord-agents` currently exposes `overlord-agent-emule` plus shared/support crates. The same file found across multiple networks still collapses into a single database record with multiple source sets in the intended target design. The system is designed to run on one machine now and scale out later.
+
+## Repo Surfaces
+
+| Surface | Kind | Status | Notes |
+|---|---|---|---|
+| `overlord-be-coordinator` | Node package | `current` | SvelteKit coordinator, API, SSR UI, Prisma schema owner |
+| `overlord-be-db` | Ops helper | `current` | Windows-only local PostgreSQL bootstrap/runtime helper for backend development |
 
 ---
 
@@ -54,7 +67,9 @@ flowchart TD
     DLM -->|"Metalink 4"| qbt
 ```
 
-### Indexer Agents  (SVC-002 … SVC-005)
+### Indexer Agents (Target State, SVC-002 … SVC-005)
+
+The agent graph below is the target-state service map. In the current tree, `overlord-agent-emule` is the implemented agent package; the other protocol-specific services remain planned.
 
 ```mermaid
 flowchart TD
@@ -121,7 +136,7 @@ flowchart TD
 | Layer | What it does |
 |---|---|
 | **Coordinator** (Node.js) | Owns the database, exposes the public REST API and SSR frontend, dispatches jobs to indexers, manages downloads via Metalink 4 |
-| **Indexer agents** (Rust) | Stateless protocol daemons — only need `OVERLORD_COORDINATOR_URL`. Run one or many instances per protocol |
+| **Indexer agents** (Rust) | Stateless protocol daemons — only need `OVERLORD_COORDINATOR_URL`. `overlord-agent-emule` is current; the broader per-protocol set remains target-state |
 | **Cross-protocol dedup** | Same file found on multiple networks → one DB record, multiple source sets. Same file in multiple torrents → one canonical record |
 | **Always crawling** | Passive crawl runs 24/7 regardless of user activity |
 | **Active search** | User queries fan out to all registered indexer instances simultaneously |
@@ -129,13 +144,13 @@ flowchart TD
 
 ## Services
 
-| ID | Package | Port | P2P |
-|---|---|---|---|
-| SVC-001 | `overlord-be-coordinator` | 13300 | — |
-| SVC-002 | `overlord-agent-emule` | 13301 | 41000 UDP (KAD), 41001 TCP (ED2K) |
-| SVC-003 | `overlord-agent-mainline` | 13302 | 41002 UDP+TCP (BT DHT) |
-| SVC-004 | `overlord-agent-gnutella` | 13303 | 41003 TCP (G2) |
-| SVC-005 | `overlord-agent-ipfs` | 13304 | 41004 TCP (libp2p) |
+| ID | Package | Status | Port | P2P |
+|---|---|---|---|---|
+| SVC-001 | `overlord-be-coordinator` | `current` | 13300 | — |
+| SVC-002 | `overlord-agent-emule` | `current` | 13301 | 41000 UDP (KAD), 41001 TCP (ED2K) |
+| SVC-003 | `overlord-agent-mainline` | `planned` | 13302 | 41002 UDP+TCP (BT DHT) |
+| SVC-004 | `overlord-agent-gnutella` | `planned` | 13303 | 41003 TCP (G2) |
+| SVC-005 | `overlord-agent-ipfs` | `planned` | 13304 | 41004 TCP (libp2p) |
 
 All ports are configurable via the central TOML. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for configuration, [docs/ROADMAP.md](docs/ROADMAP.md) for phases, [docs/COORDINATOR.md](docs/COORDINATOR.md) for APIs and schema ownership, and [docs/ID_INDEX.md](docs/ID_INDEX.md) for the tracked ID registry.
 

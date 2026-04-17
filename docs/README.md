@@ -2,6 +2,12 @@
 
 Canonical documentation home for `overlord-be`.
 
+Current repo surfaces:
+
+- `../overlord-be-coordinator/` is the only formal Node package in this repo.
+- `../overlord-be-db/` is a backend-owned Windows helper for local PostgreSQL bootstrap and runtime control.
+- Architecture docs still describe the broader target-state service lineup, but only current packages are present in the tree today.
+
 ## Read First
 
 - [Architecture](./ARCHITECTURE.md)

@@ -42,6 +42,10 @@ workspace and on GitHub:
 **Repo layout policy:** backend services live under `p2p-overlord-be/`, while
 all Rust agents live together under a `p2p-overlord-agents/` subfolder.
 
+**Current implementation note:** only `SVC-001` and `SVC-002` are present in the
+tree today. `SVC-003` through `SVC-005` remain the documented target-state
+service set and are intentionally described here as planned architecture.
+
 ---
 
 ## 2. Workspace Layout
@@ -49,30 +53,31 @@ all Rust agents live together under a `p2p-overlord-agents/` subfolder.
 ```
 p2p-overlord/
 ├── p2p-overlord-be/
-│   └── overlord-be-coordinator/    # SVC-001: SvelteKit/Node.js coordinator + UI
-│       ├── package.json
-│       ├── svelte.config.js
-│       ├── prisma/
-│       │   └── schema.prisma       # PostgreSQL schema definition for reset + Prisma db push
-│       ├── openapi/
-│       │   └── internal-api.yaml   # Rust ↔ TS wire contract [F013]
-│       └── src/
-│           ├── lib/
-│           │   ├── server/         # server-only: DB, indexer clients, download manager
-│           │   └── shared/         # types generated from internal-api.yaml
-│           └── routes/             # SvelteKit file-based routing (pages + API endpoints)
-│   ├── docs/                       # canonical backend/spec docs
-│   └── README.md               # curated docs landing page
-├── p2p-overlord-agents/        # Rust agents repo contents
-│   ├── Cargo.toml              # workspace root (Rust agents only)
-│   ├── docs/                   # canonical agents/protocol docs
-│   ├── overlord.toml.example   # annotated reference config
+│   ├── overlord-be-coordinator/     # SVC-001: SvelteKit/Node.js coordinator + UI
+│   │   ├── package.json
+│   │   ├── prisma/
+│   │   │   └── schema.prisma        # PostgreSQL schema definition for reset + Prisma db push
+│   │   ├── openapi/
+│   │   │   └── internal-api.yaml    # Rust ↔ TS wire contract [F013]
+│   │   └── src/
+│   │       ├── lib/
+│   │       │   ├── server/          # server-only: DB, indexer clients, download manager
+│   │       │   └── shared/          # types generated from internal-api.yaml
+│   │       └── routes/              # SvelteKit pages + API endpoints
+│   ├── overlord-be-db/              # backend-owned Windows local DB runtime helper
+│   ├── docs/                        # canonical backend/spec docs
+│   └── README.md                    # curated docs landing page
+├── p2p-overlord-agents/             # Rust agents repo contents
+│   ├── Cargo.toml                   # workspace root (Rust agents only)
+│   ├── docs/                        # canonical agents/protocol docs
+│   ├── overlord.toml.example        # annotated reference config
 │   └── crates/
 │       ├── overlord-agent-common/   # shared Rust types, traits, HTTP client/server helpers
-│       ├── overlord-agent-emule/    # SVC-002: KAD + ED2K indexer
-│       ├── overlord-agent-mainline/ # SVC-003: BitTorrent DHT indexer
-│       ├── overlord-agent-gnutella/ # SVC-004: Gnutella G2 indexer
-│       └── overlord-agent-ipfs/     # SVC-005: IPFS indexer
+│       ├── overlord-agent-emule/    # SVC-002: KAD + ED2K indexer (current)
+│       ├── overlord-agent-nat/      # NAT/UPnP support crate
+│       ├── overlord-kad-*/          # Kad protocol, routing, transport, and DHT crates
+│       ├── miniupnpc*/              # local MiniUPnPc wrapper and bindings
+│       └── overlord-tools/          # developer/helper binaries
 ```
 
 **No separate frontend package.** The SvelteKit app inside
@@ -80,6 +85,9 @@ p2p-overlord/
 is the frontend.
 It SSR-renders pages on the Node.js coordinator process and connects back to its own API
 routes. No cross-origin concerns; no separate deployment artifact.
+
+The service tables below still show the full target-state protocol lineup. Only
+the coordinator plus `overlord-agent-emule` are current runtime packages today.
 
 **Note on kadkad:** The existing `kadkad` codebase is the starting point and spiritual
 predecessor of `overlord-agent-emule`. Its wire protocol codec, routing table, obfuscation layer,
@@ -90,13 +98,13 @@ and DHT traversal logic inform the redesign, but nothing is copied or imported d
 
 ## 3. Service Overview
 
-| ID | Package | Tech | REST port | P2P ports | Role |
-|---|---|---|---|---|---|
-| SVC-001 | `overlord-be-coordinator` | SvelteKit / Node.js | 13300 | — | Brain: DB, API, BFF, SSR UI, download management |
-| SVC-002 | `overlord-agent-emule` | Rust | 13301 | 41000 UDP (KAD), 41001 TCP (ED2K) | KAD + ED2K indexer |
-| SVC-003 | `overlord-agent-mainline` | Rust | 13302 | 41002 UDP+TCP (BT DHT) | BitTorrent DHT indexer |
-| SVC-004 | `overlord-agent-gnutella` | Rust | 13303 | 41003 TCP (G2) | Gnutella 2 indexer |
-| SVC-005 | `overlord-agent-ipfs` | Rust | 13304 | 41004 TCP (libp2p) | IPFS indexer |
+| ID | Package | Status | Tech | REST port | P2P ports | Role |
+|---|---|---|---|---|---|---|
+| SVC-001 | `overlord-be-coordinator` | `current` | SvelteKit / Node.js | 13300 | — | Brain: DB, API, BFF, SSR UI, download management |
+| SVC-002 | `overlord-agent-emule` | `current` | Rust | 13301 | 41000 UDP (KAD), 41001 TCP (ED2K) | KAD + ED2K indexer |
+| SVC-003 | `overlord-agent-mainline` | `planned` | Rust | 13302 | 41002 UDP+TCP (BT DHT) | BitTorrent DHT indexer |
+| SVC-004 | `overlord-agent-gnutella` | `planned` | Rust | 13303 | 41003 TCP (G2) | Gnutella 2 indexer |
+| SVC-005 | `overlord-agent-ipfs` | `planned` | Rust | 13304 | 41004 TCP (libp2p) | IPFS indexer |
 
 All ports are configurable via the central TOML. The values above are defaults.
 
