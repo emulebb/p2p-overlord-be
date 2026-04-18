@@ -26,7 +26,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | Status | Count |
 |---|---:|
 | `IN_PROGRESS` | 2 |
-| `TODO` | 26 |
+| `TODO` | 32 |
 | `BLOCKED` | 0 |
 | `DONE` | 2 |
 | `REJECTED` | 0 |
@@ -43,6 +43,12 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `DONE` | `P1` | `kad_routing` | `TODONEXTKAD` |
 | `ITEM_009` | Rename misleading Kad proto semantic fields | `DONE` | `P2` | `kad_proto` | `TODONEXTKAD` |
 | `ITEM_010` | Drive ED2K parity beyond server search toward native sharing and transfer | `IN_PROGRESS` | `P2` | `ed2k` | `TODO-20260322-001` |
+| `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `TODO` | `P2` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `TODO` | `P2` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `TODO` | `P2` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `TODO` | `P2` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `TODO` | `P2` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_036` | Tighten downloader scheduling and broader server-session parity | `TODO` | `P2` | `ed2k_scheduler` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_011` | Add Prometheus metrics and Grafana dashboards | `TODO` | `P3` | `observability` | `OVERLORD:B001` |
 | `ITEM_012` | Implement real password login behind the auth stub | `TODO` | `P3` | `auth` | `OVERLORD:B002` |
 | `ITEM_013` | Add content hash blocklist integration | `TODO` | `P3` | `safety` | `OVERLORD:B003` |
@@ -153,8 +159,62 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Priority: `P2`
 - Area: `ed2k`
 - Source: `TODO-20260322-001`
-- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, and background-session reuse are now wired. The real end goal is full native ED2K parity in this repo: server search, peer search, sharing, upload, and download without depending on an external client.
-- Next steps: Keep tightening oracle parity in the server session, then add the missing peer transfer state machines, shared-file serving, download persistence, verification, and upload/download control-plane support in staged milestones.
+- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
+- Next steps: Drive `ITEM_031` through `ITEM_036` in order, starting with truthful modern AICH on the active `FileIdentifier` / `OP_HASHSETANSWER2` path and then tightening every still-advertised non-obsolete feature until the runtime description is truthful again.
+
+### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
+
+- Status: `TODO`
+- Priority: `P2`
+- Area: `ed2k_aich`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: The large-file live `server.met` roundtrip now proves the modern `FileIdentifier` / `OP_MULTIPACKET_EXT2` / `OP_HASHSETREQUEST2` transport path, but the harness verifier still reports `AICH: Unavailable`, so the current large-file branch is not yet truthful.
+- Next steps: Persist AICH root and part-hash data in the shared-file and transfer runtime, answer `OP_HASHSETREQUEST2` with AICH payloads when requested, validate inbound `OP_HASHSETANSWER2` AICH data, and keep rerunning the private plus large-file realnet gates until the verifier output moves to `AICH: OK`.
+
+### `ITEM_032` — Make still-advertised non-obsolete ED2K features truthful
+
+- Status: `TODO`
+- Priority: `P2`
+- Area: `ed2k_truthfulness`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: The tracker’s strong completion rule now treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. After AICH, the next truthfulness gap starts with chat/captcha.
+- Next steps: Audit the current hello, peer-capability, and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and begin with the chat/captcha advert because it is already called out by the tracker as the next explicit truthfulness target.
+
+### `ITEM_033` — Port stock UploadQueue credit, score, LowID, and friend-slot behavior
+
+- Status: `TODO`
+- Priority: `P2`
+- Area: `ed2k_upload_queue`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: The listener upload subset is already serving files, but queue admission, credit weighting, LowID handling, and friend-slot behavior still lag stock `UploadQueue.cpp` semantics.
+- Next steps: Port the score inputs and state transitions that materially affect queue rank and slot assignment, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
+
+### `ITEM_034` — Complete buddy and callback parity for firewalled ED2K mode
+
+- Status: `TODO`
+- Priority: `P2`
+- Area: `ed2k_low_id`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: Callback-aware source acquisition is already wired, but the full buddy matrix, buddy tags, and firewalled callback behavior are still incomplete for truthful LowID parity.
+- Next steps: Implement buddy setup and teardown, callback state transitions, and buddy-tag parity for firewalled runs, then validate both plaintext and obfuscated LowID paths against harness and live evidence.
+
+### `ITEM_035` — Add preview, browsing, and active notes parity surfaces
+
+- Status: `TODO`
+- Priority: `P2`
+- Area: `ed2k_surface`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope: preview request/answer, shared-files and shared-directories browsing, and active ED2K notes search.
+- Next steps: Land these surfaces in staged slices with harness-visible evidence for each slice, keeping preview first if it is needed by current peer behavior and preserving notes-search truthfulness at the API boundary once the transport path is added.
+
+### `ITEM_036` — Tighten downloader scheduling and broader server-session parity
+
+- Status: `TODO`
+- Priority: `P2`
+- Area: `ed2k_scheduler`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: After the modern transport path and the core peer state machines are truthful, the remaining gaps shift toward broader `ServerSocket.cpp` coverage and downloader scheduling behavior where stock `v0.72a` still makes materially different A4AF or global scheduler decisions.
+- Next steps: Port the remaining server-session behavior that affects live acceptance, align the downloader scheduler where stock behavior materially changes peer interaction, and keep each change gated by focused tests plus private and live parity evidence.
 
 ## Deferred Product And Platform Backlog
 
