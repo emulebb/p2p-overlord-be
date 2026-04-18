@@ -164,12 +164,12 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 ### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
 
-- Status: `TODO`
+- Status: `IN_PROGRESS`
 - Priority: `P2`
 - Area: `ed2k_aich`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The large-file live `server.met` roundtrip now proves the modern `FileIdentifier` / `OP_MULTIPACKET_EXT2` / `OP_HASHSETREQUEST2` transport path, but the harness verifier still reports `AICH: Unavailable`, so the current large-file branch is not yet truthful.
-- Next steps: Persist AICH root and part-hash data in the shared-file and transfer runtime, answer `OP_HASHSETREQUEST2` with AICH payloads when requested, validate inbound `OP_HASHSETANSWER2` AICH data, and keep rerunning the private plus large-file realnet gates until the verifier output moves to `AICH: OK`.
+- Summary: The deterministic private large-file harness<->agent roundtrip now proves the active modern `FileIdentifier` / `OP_MULTIPACKET_EXT2` / `OP_HASHSETREQUEST2` / `OP_HASHSETANSWER2` branch end to end, including stage2 harness verification at `MD4: OK - AICH: OK`, but locally synthesized AICH still diverges from the stock tracing harness for the same payload so the "generation" half of the item is not done yet.
+- Next steps: Keep the network-learned AICH identity authoritative on the active path, align the local AICH builder with the stock tracing harness so completed payloads generate the same root/hashset without peer-supplied AICH, and then rerun the private plus large-file realnet gates until both transport and local generation are truthful.
 
 ### `ITEM_032` — Make still-advertised non-obsolete ED2K features truthful
 
