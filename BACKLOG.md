@@ -25,8 +25,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 | Status | Count |
 |---|---:|
-| `IN_PROGRESS` | 2 |
-| `TODO` | 32 |
+| `IN_PROGRESS` | 3 |
+| `TODO` | 31 |
 | `BLOCKED` | 0 |
 | `DONE` | 2 |
 | `REJECTED` | 0 |
@@ -43,7 +43,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `DONE` | `P1` | `kad_routing` | `TODONEXTKAD` |
 | `ITEM_009` | Rename misleading Kad proto semantic fields | `DONE` | `P2` | `kad_proto` | `TODONEXTKAD` |
 | `ITEM_010` | Drive ED2K parity beyond server search toward native sharing and transfer | `IN_PROGRESS` | `P2` | `ed2k` | `TODO-20260322-001` |
-| `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `TODO` | `P2` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `IN_PROGRESS` | `P2` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `TODO` | `P2` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `TODO` | `P2` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `TODO` | `P2` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
@@ -105,8 +105,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Priority: `P1`
 - Area: `kad_net`
 - Source: `TODONEXTKAD`
-- Summary: Finish the remaining obfuscation and packet-tracking work so the runtime looks and behaves more like modern eMule traffic under load.
-- Next steps: Port the remaining transport details, replace generic packet tracking with oracle-like logic, and keep re-validating against live captures.
+- Summary: Recent local `>2 GiB` harness<->agent runs exposed and fixed a reverse-Kad obfuscated source-publish identity mismatch, but broader obfuscation details and packet-tracking behavior still need to converge toward modern eMule traffic under load.
+- Next steps: Keep the new source-connect instrumentation, port the remaining transport details, replace generic packet tracking with oracle-like logic, and keep re-validating against both local large-file gates and live captures.
 
 ### `ITEM_005` — Align passive source-search scheduling cadence and replay ordering with the oracle
 
@@ -159,8 +159,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Priority: `P2`
 - Area: `ed2k`
 - Source: `TODO-20260322-001`
-- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
-- Next steps: Drive `ITEM_031` through `ITEM_036` in order, starting with truthful modern AICH on the active `FileIdentifier` / `OP_HASHSETANSWER2` path and then tightening every still-advertised non-obsolete feature until the runtime description is truthful again.
+- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
+- Next steps: Finish `ITEM_031` by making local AICH generation stock-truthful, then drive `ITEM_032` through `ITEM_036` in order until every still-advertised non-obsolete surface is either implemented or honestly de-advertised.
 
 ### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
 
@@ -168,8 +168,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Priority: `P2`
 - Area: `ed2k_aich`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The deterministic private large-file harness<->agent roundtrip now proves the active modern `FileIdentifier` / `OP_MULTIPACKET_EXT2` / `OP_HASHSETREQUEST2` / `OP_HASHSETANSWER2` branch end to end, including stage2 harness verification at `MD4: OK - AICH: OK`, but locally synthesized AICH still diverges from the stock tracing harness for the same payload so the "generation" half of the item is not done yet.
-- Next steps: Keep the network-learned AICH identity authoritative on the active path, align the local AICH builder with the stock tracing harness so completed payloads generate the same root/hashset without peer-supplied AICH, and then rerun the private plus large-file realnet gates until both transport and local generation are truthful.
+- Summary: Deterministic `>2 GiB` loopback coverage is now green for the active modern path across direct ED2K and Kad-discovered transfers, including the reverse-Kad obfuscated harness download after the source-publish chunk-order fix. Modern AICH transport and verifier acceptance are proven on the active path, but locally synthesized AICH still diverges from the stock tracing harness for the same payload so the generation half of the item is not done yet.
+- Next steps: Keep the network-learned AICH identity authoritative on the active path, align the local AICH builder with the stock tracing harness so completed payloads generate the same root/hashset without peer-supplied AICH, rerun the local large-file matrix to keep both directions green, and then rerun the large-file realnet gate before opening `ITEM_032`.
 
 ### `ITEM_032` — Make still-advertised non-obsolete ED2K features truthful
 
