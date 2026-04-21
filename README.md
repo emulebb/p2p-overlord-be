@@ -156,12 +156,14 @@ All ports are configurable via the central TOML. See [docs/CONFIGURATION.md](doc
 
 ## Validation Baseline
 
-Use repo-local quality entrypoints before finishing changes:
+Use direct repo commands before finishing changes:
 
 - Repo-local rules are tracked in `./AGENTS.md`.
-- Agents repo: run `p2p-overlord-agents/scripts/windows/rust_quality.ps1`
-- Coordinator repo: run `p2p-overlord-be/overlord-be-coordinator/scripts/windows/coordinator_quality.ps1`
-- Backend repo privacy guard: run `p2p-overlord-be/scripts/windows/tracked_file_privacy_guard.ps1`
+- Agents repo: run `cargo fmt --all --check` and
+  `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all`.
+- Coordinator repo: run `npm run windows:quality`.
+- Privacy guard: from `p2p-overlord-tooling`, run
+  `python -m overlord_tooling guard-tracked-files --repo-root ../p2p-overlord-be`.
 
 Coordinator baseline details:
 

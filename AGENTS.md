@@ -6,8 +6,6 @@
 - Use `BACKLOG.md` in this repo as the canonical active backlog.
 - In this repo, `overlord-be-coordinator` is the only formal Node package.
   `overlord-be-db` remains a Windows-only backend helper.
-- Use `overlord-be-coordinator/scripts/windows/coordinator_quality.ps1` as the
-  canonical local coordinator quality gate.
 - The conservative coordinator baseline is:
   - `npm run check`
   - `npm run prisma:validate`
@@ -19,3 +17,4 @@
   - keep `schema.prisma` authoritative
   - use Prisma `db push`
   - do not treat incremental Prisma migrations as the schema workflow
+- Do not add shell wrapper launchers.

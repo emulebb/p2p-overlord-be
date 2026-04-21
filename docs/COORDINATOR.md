@@ -10,13 +10,12 @@ SvelteKit server routes (`+server.ts`) are the REST API. SvelteKit `+page.svelte
 the SSR-rendered UI pages. The BFF pattern is native: load functions run server-side and
 pass typed data directly to page components — no CORS, no duplication.
 
-**Local validation baseline:** use the repo-local quality gates instead of ad hoc command
-selection. Repo-local rules are tracked in each repo's `AGENTS.md`. For Rust
-changes, run `p2p-overlord-agents/scripts/windows/rust_quality.ps1`. For
-coordinator changes, run
-`p2p-overlord-be/overlord-be-coordinator/scripts/windows/coordinator_quality.ps1`,
-which currently covers `npm run check`, Prisma schema validation, and Prisma
-client generation.
+**Local validation baseline:** use the direct repo commands instead of wrapper
+scripts. For Rust changes, run `cargo fmt --all --check` and
+`cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all`
+from `p2p-overlord-agents`. For coordinator changes, run `npm run
+windows:quality` from `p2p-overlord-be/overlord-be-coordinator`; that command
+covers Svelte checks, Prisma schema validation, and Prisma client generation.
 
 Single source of truth. Owns the DB, the API, the config, all intelligence layers, and all
 download client integrations.

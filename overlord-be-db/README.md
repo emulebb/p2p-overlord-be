@@ -9,7 +9,6 @@ This directory is a backend-owned ops/runtime helper, not a standalone npm packa
 - `scripts/windows/db_setup.mjs`
   - End-to-end bootstrap for local development.
   - Downloads and extracts the pinned PostgreSQL build.
-  - Unblocks extracted files on Windows.
   - Ensures the Windows Firewall rule exists for TCP `5432`.
   - Initializes the cluster if needed.
   - Writes `overlord-be-coordinator/.env` with `DATABASE_URL=postgresql://overlord:overlord@127.0.0.1:5432/overlord`.
@@ -29,55 +28,55 @@ This directory is a backend-owned ops/runtime helper, not a standalone npm packa
 
 Bootstrap the local PostgreSQL runtime and leave it running. Use this only when the coordinator schema has not changed:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs
 ```
 
 Bootstrap and force the coordinator `.env` database URL update:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --force-env
 ```
 
 Bootstrap from a fresh data directory. This is the required path after any coordinator persisted-schema change:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --reset-data --force-env
 ```
 
 Bootstrap but skip Prisma schema sync:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --skip-migrate
 ```
 
 Bootstrap and stop PostgreSQL at the end:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_setup.mjs --stop
 ```
 
 Start the managed PostgreSQL instance:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs start
 ```
 
 Stop the managed PostgreSQL instance:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs stop
 ```
 
 Restart the managed PostgreSQL instance:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs restart
 ```
 
 Show the managed PostgreSQL status:
 
-```powershell
+```console
 node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs status
 ```
 
@@ -94,7 +93,7 @@ node p2p-overlord-be/overlord-be-db/scripts/windows/db_run.mjs status
 - `schema.prisma` is the only coordinator schema source in this phase.
 - Prisma migrations are not treated as stable history in this phase; setup uses the current Prisma schema state through `db push`.
 - After any coordinator persisted-schema edit, reset the local DB explicitly with `--reset-data` and rerun setup.
-- For non-schema coordinator changes, use `overlord-be-coordinator/scripts/windows/coordinator_quality.ps1` as the local quality gate.
+- For non-schema coordinator changes, run `npm run windows:quality` from `overlord-be-coordinator`.
 - Do not treat incremental Prisma migration patches as the coordinator schema workflow in this phase.
 - `OVERLORD_PROJECT_DIR` overrides the workspace root used to locate `overlord-be-coordinator`.
 - `OVERLORD_TMP_DIR` overrides the shared workspace temp root used for the managed runtime layout.

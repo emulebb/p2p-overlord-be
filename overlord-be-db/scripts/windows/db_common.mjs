@@ -141,10 +141,6 @@ function escapeXml(value) {
     .replace(/'/g, '&apos;');
 }
 
-function escapePowerShellSingleQuoted(value) {
-  return String(value).replace(/'/g, "''");
-}
-
 export function getCurrentWindowsUser() {
   const username = process.env.USERNAME?.trim();
   if (!username) {
@@ -487,23 +483,33 @@ export function extractArchive(archivePath) {
   resetPath(PATHS.postgresInstallDir);
   mkdirSync(PATHS.postgresInstallDir, { recursive: true });
   spawnOrThrow('tar', ['-xf', archivePath, '-C', PATHS.postgresInstallDir]);
-  spawnOrThrow('powershell', ['-Command', `Get-ChildItem -Path '${PATHS.postgresInstallDir}' -Recurse | Unblock-File`]);
 }
 
 export function ensureWindowsFirewallRule() {
   const postgresBinary = getBinaryPath('postgres.exe');
-  const command = [
-    "$ErrorActionPreference = 'Stop'",
-    `$ruleName = '${escapePowerShellSingleQuoted(DEFAULTS.firewallRuleName)}'`,
-    `$programPath = '${escapePowerShellSingleQuoted(postgresBinary)}'`,
-    '$existing = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue',
-    'if ($existing) { Remove-NetFirewallRule -DisplayName $ruleName }',
-    `New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Profile Any -Protocol TCP -LocalPort ${DEFAULTS.port} -Program $programPath | Out-Null`
-  ].join('; ');
-
-  const result = spawnAllowFailure('powershell', ['-Command', command], {
+  spawnAllowFailure('netsh', ['advfirewall', 'firewall', 'delete', 'rule', `name=${DEFAULTS.firewallRuleName}`], {
     env: prismaEnv()
   });
+
+  const result = spawnAllowFailure(
+    'netsh',
+    [
+      'advfirewall',
+      'firewall',
+      'add',
+      'rule',
+      `name=${DEFAULTS.firewallRuleName}`,
+      'dir=in',
+      'action=allow',
+      'profile=any',
+      'protocol=TCP',
+      `localport=${DEFAULTS.port}`,
+      `program=${postgresBinary}`
+    ],
+    {
+      env: prismaEnv()
+    }
+  );
 
   if (result.status !== 0) {
     const details = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join(os.EOL);
