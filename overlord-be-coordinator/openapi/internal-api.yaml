@@ -637,6 +637,7 @@ components:
           indexer_id,
           protocol,
           peers_connected,
+          kad_bootstrapped,
           crawl_rate,
           snoop_queue_depth,
           staging_queue_depth,
@@ -653,6 +654,8 @@ components:
           $ref: '#/components/schemas/Protocol'
         peers_connected:
           type: integer
+        kad_bootstrapped:
+          type: boolean
         crawl_rate:
           type: number
         snoop_queue_depth:

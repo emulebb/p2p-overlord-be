@@ -451,6 +451,7 @@ export type IndexerStats = {
 	indexer_id: string;
 	protocol: Protocol;
 	peers_connected: number;
+	kad_bootstrapped: boolean;
 	crawl_rate: number;
 	snoop_queue_depth: number;
 	staging_queue_depth: number;
