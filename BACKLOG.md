@@ -34,7 +34,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | ID | Title | Status | Priority | Area | Source |
 |---|---|---|---|---|---|
 | `ITEM_001` | Improve Kad publish acceptance parity and validate harvest warm-up | `IN_PROGRESS` | `P1` | `kad` | `TODO-20260322-001`, `TODONEXTKAD` |
-| `ITEM_002` | Fix Kad publish observability roll-up counters in agent stats | `TODO` | `P1` | `kad_observability` | `TODO-20260322-001` |
+| `ITEM_002` | Fix Kad publish observability roll-up counters in agent stats | `DONE` | `P1` | `kad_observability` | `TODO-20260322-001` |
 | `ITEM_003` | Fix lingering UPnP mappings after real agent shutdown | `TODO` | `P1` | `nat` | `TODO-20260321-001` |
 | `ITEM_004` | Finish oracle-like Kad transport and packet-tracking parity | `TODO` | `P1` | `kad_net` | `TODONEXTKAD` |
 | `ITEM_005` | Align passive source-search scheduling cadence and replay ordering with the oracle | `TODO` | `P1` | `kad_replay` | `TODO-20260322-001`, `TODONEXTKAD` |
@@ -83,12 +83,12 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 ### `ITEM_002` — Fix Kad publish observability roll-up counters in agent stats
 
-- Status: `TODO`
+- Status: `DONE`
 - Priority: `P1`
 - Area: `kad_observability`
 - Source: `TODO-20260322-001`
-- Summary: Bring aggregate publish counters in `/api/internal/stats` into line with the already-correct per-batch publish telemetry.
-- Next steps: Align aggregate keyword and source counters with the batch accounting path and verify them during a real publish session.
+- Summary: Aggregate publish counters in `/api/internal/stats` now project in-flight keyword/source progress from the current batch and expose first-class notes publish batch/counter telemetry when notes publish is enabled.
+- Validation: `cargo test -p overlord-agent-emule`, `cargo test -p overlord-agent-common`, `kad2.cell.notes.publish.private.v1`, and `kad2.campaign.publish-families.v1` passed on April 25, 2026.
 
 ### `ITEM_003` — Fix lingering UPnP mappings after real agent shutdown
 
