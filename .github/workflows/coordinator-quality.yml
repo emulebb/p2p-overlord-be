@@ -13,8 +13,6 @@ on:
       - "overlord-be-coordinator/prisma.config.ts"
       - "overlord-be-coordinator/prisma/**"
       - "overlord-be-coordinator/src/**"
-      - "overlord-be-coordinator/scripts/windows/coordinator_quality.ps1"
-      - "overlord-be-db/scripts/windows/**"
       - "overlord-be-db/README.md"
   pull_request:
     paths:
@@ -28,13 +26,13 @@ on:
       - "overlord-be-coordinator/prisma.config.ts"
       - "overlord-be-coordinator/prisma/**"
       - "overlord-be-coordinator/src/**"
-      - "overlord-be-coordinator/scripts/windows/coordinator_quality.ps1"
-      - "overlord-be-db/scripts/windows/**"
       - "overlord-be-db/README.md"
 
 jobs:
   coordinator-quality:
     runs-on: windows-latest
+    env:
+      DATABASE_URL: postgresql://overlord:overlord@127.0.0.1:5432/overlord
 
     defaults:
       run:
@@ -56,4 +54,4 @@ jobs:
         run: npm ci
 
       - name: Run coordinator quality checks
-        run: ./scripts/windows/coordinator_quality.ps1
+        run: npm run windows:quality
