@@ -159,7 +159,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 - Priority: `P2`
 - Area: `ed2k`
 - Source: `TODO-20260322-001`
-- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
+- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. On April 26, 2026, `kad2.cell.keyword.search.obfuscated.realnet.v1.obfuscated-20260426-204828` passed with a verified obfuscated live payload. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
 - Next steps: Finish `ITEM_031` by making local AICH generation stock-truthful, then drive `ITEM_032` through `ITEM_036` in order until every still-advertised non-obsolete surface is either implemented or honestly de-advertised.
 
 ### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
