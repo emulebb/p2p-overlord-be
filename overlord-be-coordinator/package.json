@@ -10,6 +10,7 @@
     "check": "node ./node_modules/@sveltejs/kit/svelte-kit.js sync && node ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
+    "quality": "npm run check && npm run prisma:validate && npm run prisma:generate",
     "windows:quality": "npm run check && npm run prisma:validate && npm run prisma:generate",
     "windows:run": "vite dev --host 0.0.0.0 --port 13300 --strictPort --logLevel info",
     "windows:debug": "node --inspect ./node_modules/vite/bin/vite.js dev --host 0.0.0.0 --port 13300 --strictPort --logLevel info"

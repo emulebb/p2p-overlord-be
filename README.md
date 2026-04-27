@@ -162,6 +162,7 @@ Use direct repo commands before finishing changes:
 - Agents repo: run `cargo fmt --all --check` and
   `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all`.
 - Coordinator repo: run `npm run windows:quality`.
+- Coordinator repo portable alias: run `npm run quality`.
 - Privacy guard: from `p2p-overlord-tooling`, run
   `python -m overlord_tooling guard-tracked-files --repo-root ../p2p-overlord-be`.
 

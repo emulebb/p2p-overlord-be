@@ -7,6 +7,8 @@
 - In this repo, `overlord-be-coordinator` is the only formal Node package.
   `overlord-be-db` remains a Windows-only backend helper.
 - The conservative coordinator baseline is:
+  - `npm run quality`
+  - or equivalently:
   - `npm run check`
   - `npm run prisma:validate`
   - `npm run prisma:generate`
