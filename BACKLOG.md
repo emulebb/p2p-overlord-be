@@ -8,7 +8,9 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 - [Status Vocabulary](#status-vocabulary)
 - [Summary](#summary)
-- [Network And Protocol Backlog](#network-and-protocol-backlog)
+- [ED2K Full Parity Lane](#ed2k-full-parity-lane)
+- [Kad Live-Acceptance Lane](#kad-live-acceptance-lane)
+- [Completed Protocol Context](#completed-protocol-context)
 - [Deferred Product And Platform Backlog](#deferred-product-and-platform-backlog)
 
 ## Status Vocabulary
@@ -26,83 +28,159 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 | Status | Count |
 |---|---:|
 | `IN_PROGRESS` | 3 |
-| `TODO` | 31 |
+| `TODO` | 30 |
 | `BLOCKED` | 0 |
-| `DONE` | 2 |
+| `DONE` | 3 |
 | `REJECTED` | 0 |
 
-| ID | Title | Status | Priority | Area | Source |
-|---|---|---|---|---|---|
-| `ITEM_001` | Improve Kad publish acceptance parity and validate harvest warm-up | `IN_PROGRESS` | `P1` | `kad` | `TODO-20260322-001`, `TODONEXTKAD` |
-| `ITEM_002` | Fix Kad publish observability roll-up counters in agent stats | `DONE` | `P1` | `kad_observability` | `TODO-20260322-001` |
-| `ITEM_003` | Fix lingering UPnP mappings after real agent shutdown | `TODO` | `P1` | `nat` | `TODO-20260321-001` |
-| `ITEM_004` | Finish oracle-like Kad transport and packet-tracking parity | `TODO` | `P1` | `kad_net` | `TODONEXTKAD` |
-| `ITEM_005` | Align passive source-search scheduling cadence and replay ordering with the oracle | `TODO` | `P1` | `kad_replay` | `TODO-20260322-001`, `TODONEXTKAD` |
-| `ITEM_006` | Preserve full snooped request shape for passive replay fidelity | `TODO` | `P1` | `kad_replay` | `TODONEXTKAD` |
-| `ITEM_007` | Preserve per-author Kad notes results after live validation | `TODO` | `P1` | `kad_notes` | `TODONEXTKAD` |
-| `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `DONE` | `P1` | `kad_routing` | `TODONEXTKAD` |
-| `ITEM_009` | Rename misleading Kad proto semantic fields | `DONE` | `P2` | `kad_proto` | `TODONEXTKAD` |
-| `ITEM_010` | Drive ED2K parity beyond server search toward native sharing and transfer | `IN_PROGRESS` | `P2` | `ed2k` | `TODO-20260322-001` |
-| `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `IN_PROGRESS` | `P2` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `TODO` | `P2` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `TODO` | `P2` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `TODO` | `P2` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `TODO` | `P2` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_036` | Tighten downloader scheduling and broader server-session parity | `TODO` | `P2` | `ed2k_scheduler` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_011` | Add Prometheus metrics and Grafana dashboards | `TODO` | `P3` | `observability` | `OVERLORD:B001` |
-| `ITEM_012` | Implement real password login behind the auth stub | `TODO` | `P3` | `auth` | `OVERLORD:B002` |
-| `ITEM_013` | Add content hash blocklist integration | `TODO` | `P3` | `safety` | `OVERLORD:B003` |
-| `ITEM_014` | Implement coordinator HA and indexer sharding | `TODO` | `P3` | `architecture` | `OVERLORD:B004` |
-| `ITEM_015` | Share indexed content back to all supported networks | `TODO` | `P3` | `network_participation` | `OVERLORD:B005` |
-| `ITEM_016` | Add native in-process downloaders | `TODO` | `P4` | `downloaders` | `OVERLORD:B006` |
-| `ITEM_017` | Add live queue rate adjustment from the frontend | `TODO` | `P4` | `frontend` | `OVERLORD:B007` |
-| `ITEM_018` | Build a correlation log review UI | `TODO` | `P4` | `frontend` | `OVERLORD:B008` |
-| `ITEM_019` | Enforce source TTL pruning | `TODO` | `P3` | `coordinator_db` | `OVERLORD:B009` |
-| `ITEM_020` | Enforce file TTL pruning | `TODO` | `P3` | `coordinator_db` | `OVERLORD:B010` |
-| `ITEM_021` | Add an append-only correlation log table | `TODO` | `P4` | `coordinator_db` | `OVERLORD:B011` |
-| `ITEM_022` | Revisit Gnutella 1 support only if G2 proves insufficient | `TODO` | `P5` | `gnutella` | `OVERLORD:B012` |
-| `ITEM_023` | Add audio and video perceptual fingerprinting | `TODO` | `P5` | `correlation` | `OVERLORD:B013` |
-| `ITEM_024` | Generate `.torrent` files from held metadata | `TODO` | `P4` | `bittorrent` | `OVERLORD:B014` |
-| `ITEM_025` | Auto-boost demand holes into the enrichment queue | `TODO` | `P3` | `enrichment` | `OVERLORD:B015` |
-| `ITEM_026` | Add outbound alerts and webhooks for matching promoted files | `TODO` | `P4` | `notifications` | `OVERLORD:B016` |
-| `ITEM_027` | Add remote indexer crawl pause and resume controls | `TODO` | `P4` | `operations` | `OVERLORD:B017` |
-| `ITEM_028` | Add coordinator-pushed indexer binary updates | `TODO` | `P4` | `operations` | `OVERLORD:B018` |
-| `ITEM_029` | Add download completion post-processing hooks | `TODO` | `P4` | `downloads` | `OVERLORD:B019` |
-| `ITEM_030` | Add per-indexer throughput graphs in the management UI | `TODO` | `P4` | `frontend` | `OVERLORD:B020` |
+Active protocol work is tracked in two lanes:
 
-## Network And Protocol Backlog
+- ED2K full parity: finish stock eMule `v0.72a` parity for every
+  still-advertised non-obsolete ED2K behavior.
+- Kad live acceptance: close the remaining live-network acceptance,
+  replay-fidelity, notes-modeling, transport, and NAT cleanup gaps.
+
+Completed protocol items remain visible in this file for context, but they do
+not drive active priority order.
+
+| ID | Title | Status | Priority | Lane | Area | Source |
+|---|---|---|---|---|---|---|
+| `ITEM_010` | Drive ED2K parity beyond server search toward native sharing and transfer | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k` | `TODO-20260322-001` |
+| `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_036` | Tighten downloader scheduling and broader server-session parity | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_scheduler` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_001` | Improve Kad publish acceptance parity and validate harvest warm-up | `IN_PROGRESS` | `P1` | `kad_live_acceptance` | `kad` | `TODO-20260322-001`, `TODONEXTKAD` |
+| `ITEM_004` | Finish oracle-like Kad transport and packet-tracking parity | `TODO` | `P1` | `kad_live_acceptance` | `kad_net` | `TODONEXTKAD` |
+| `ITEM_005` | Align passive source-search scheduling cadence and replay ordering with the oracle | `TODO` | `P1` | `kad_live_acceptance` | `kad_replay` | `TODO-20260322-001`, `TODONEXTKAD` |
+| `ITEM_006` | Preserve full snooped request shape for passive replay fidelity | `TODO` | `P1` | `kad_live_acceptance` | `kad_replay` | `TODONEXTKAD` |
+| `ITEM_007` | Preserve per-author Kad notes results after live validation | `TODO` | `P1` | `kad_live_acceptance` | `kad_notes` | `TODONEXTKAD` |
+| `ITEM_003` | Fix lingering UPnP mappings after real agent shutdown | `TODO` | `P1` | `kad_live_acceptance` | `nat` | `TODO-20260321-001` |
+| `ITEM_002` | Fix Kad publish observability roll-up counters in agent stats | `DONE` | `P1` | `completed_context` | `kad_observability` | `TODO-20260322-001` |
+| `ITEM_008` | Port routing `CanSplit` and per-bin `/24` clustering rules | `DONE` | `P1` | `completed_context` | `kad_routing` | `TODONEXTKAD` |
+| `ITEM_009` | Rename misleading Kad proto semantic fields | `DONE` | `P2` | `completed_context` | `kad_proto` | `TODONEXTKAD` |
+| `ITEM_011` | Add Prometheus metrics and Grafana dashboards | `TODO` | `P3` | `deferred_platform` | `observability` | `OVERLORD:B001` |
+| `ITEM_012` | Implement real password login behind the auth stub | `TODO` | `P3` | `deferred_platform` | `auth` | `OVERLORD:B002` |
+| `ITEM_013` | Add content hash blocklist integration | `TODO` | `P3` | `deferred_platform` | `safety` | `OVERLORD:B003` |
+| `ITEM_014` | Implement coordinator HA and indexer sharding | `TODO` | `P3` | `deferred_platform` | `architecture` | `OVERLORD:B004` |
+| `ITEM_015` | Share indexed content back to all supported networks | `TODO` | `P3` | `deferred_platform` | `network_participation` | `OVERLORD:B005` |
+| `ITEM_019` | Enforce source TTL pruning | `TODO` | `P3` | `deferred_platform` | `coordinator_db` | `OVERLORD:B009` |
+| `ITEM_020` | Enforce file TTL pruning | `TODO` | `P3` | `deferred_platform` | `coordinator_db` | `OVERLORD:B010` |
+| `ITEM_025` | Auto-boost demand holes into the enrichment queue | `TODO` | `P3` | `deferred_platform` | `enrichment` | `OVERLORD:B015` |
+| `ITEM_016` | Add native in-process downloaders | `TODO` | `P4` | `deferred_platform` | `downloaders` | `OVERLORD:B006` |
+| `ITEM_017` | Add live queue rate adjustment from the frontend | `TODO` | `P4` | `deferred_platform` | `frontend` | `OVERLORD:B007` |
+| `ITEM_018` | Build a correlation log review UI | `TODO` | `P4` | `deferred_platform` | `frontend` | `OVERLORD:B008` |
+| `ITEM_021` | Add an append-only correlation log table | `TODO` | `P4` | `deferred_platform` | `coordinator_db` | `OVERLORD:B011` |
+| `ITEM_024` | Generate `.torrent` files from held metadata | `TODO` | `P4` | `deferred_platform` | `bittorrent` | `OVERLORD:B014` |
+| `ITEM_026` | Add outbound alerts and webhooks for matching promoted files | `TODO` | `P4` | `deferred_platform` | `notifications` | `OVERLORD:B016` |
+| `ITEM_027` | Add remote indexer crawl pause and resume controls | `TODO` | `P4` | `deferred_platform` | `operations` | `OVERLORD:B017` |
+| `ITEM_028` | Add coordinator-pushed indexer binary updates | `TODO` | `P4` | `deferred_platform` | `operations` | `OVERLORD:B018` |
+| `ITEM_029` | Add download completion post-processing hooks | `TODO` | `P4` | `deferred_platform` | `downloads` | `OVERLORD:B019` |
+| `ITEM_030` | Add per-indexer throughput graphs in the management UI | `TODO` | `P4` | `deferred_platform` | `frontend` | `OVERLORD:B020` |
+| `ITEM_022` | Revisit Gnutella 1 support only if G2 proves insufficient | `TODO` | `P5` | `deferred_platform` | `gnutella` | `OVERLORD:B012` |
+| `ITEM_023` | Add audio and video perceptual fingerprinting | `TODO` | `P5` | `deferred_platform` | `correlation` | `OVERLORD:B013` |
+
+## ED2K Full Parity Lane
+
+This lane is the main active parity sequence. The target remains full stock
+eMule `v0.72a` parity, excluding only explicitly obsolete ED2K surfaces. Do not
+open later feature-surface work as complete while earlier advertised behavior
+is still untruthful.
+
+### `ITEM_010` — Drive ED2K parity beyond server search toward native sharing and transfer
+
+- Status: `IN_PROGRESS`
+- Priority: `P1`
+- Lane: `ed2k_full_parity`
+- Area: `ed2k`
+- Source: `TODO-20260322-001`
+- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. On April 26, 2026, `kad2.cell.keyword.search.obfuscated.realnet.v1.obfuscated-20260426-204828` passed with a verified obfuscated live payload. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
+- Next steps: Close `ITEM_031` with fresh large-file real-network evidence, then drive `ITEM_032` through `ITEM_036` in order until every still-advertised non-obsolete surface is either implemented or honestly de-advertised.
+
+### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
+
+- Status: `IN_PROGRESS`
+- Priority: `P1`
+- Lane: `ed2k_full_parity`
+- Area: `ed2k_aich`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: Modern AICH transport and verifier acceptance are proven on the active path, and local stock-fixture coverage now asserts the expected tracing-harness AICH root plus part hashes for deterministic large payloads. The item remains open until a fresh large-file real-network roundtrip proves that locally generated AICH stays truthful outside the local harness matrix.
+- Latest evidence: On May 2, 2026, `ed2k.cell.modern-aich.plaintext.server-roundtrip.large.realnet.v1.plaintext-20260502-152338` failed before network execution because the eMule tracing-harness debug directory could not be resolved under the configured eMule workspace.
+- Next steps: Restore or build the tracing-harness runtime, rerun the large-file realnet AICH gate, record only the date, scenario id, run id, and result in tracked docs, and keep `ITEM_031` in progress with the failure reason if the live gate still does not pass.
+
+### `ITEM_032` — Make still-advertised non-obsolete ED2K features truthful
+
+- Status: `TODO`
+- Priority: `P1`
+- Lane: `ed2k_full_parity`
+- Area: `ed2k_truthfulness`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: The tracker’s strong completion rule treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. After AICH, the next truthfulness gap starts with chat/captcha.
+- Next steps: Audit the current hello, peer-capability, and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and begin with the chat/captcha advert because it is already called out by the tracker as the next explicit truthfulness target.
+
+### `ITEM_033` — Port stock UploadQueue credit, score, LowID, and friend-slot behavior
+
+- Status: `TODO`
+- Priority: `P1`
+- Lane: `ed2k_full_parity`
+- Area: `ed2k_upload_queue`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: The listener upload subset is already serving files, but queue admission, credit weighting, LowID handling, and friend-slot behavior still lag stock `UploadQueue.cpp` semantics.
+- Next steps: Port the score inputs and state transitions that materially affect queue rank and slot assignment, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
+
+### `ITEM_034` — Complete buddy and callback parity for firewalled ED2K mode
+
+- Status: `TODO`
+- Priority: `P1`
+- Lane: `ed2k_full_parity`
+- Area: `ed2k_low_id`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: Callback-aware source acquisition is already wired, but the full buddy matrix, buddy tags, and firewalled callback behavior are still incomplete for truthful LowID parity.
+- Next steps: Implement buddy setup and teardown, callback state transitions, and buddy-tag parity for firewalled runs, then validate both plaintext and obfuscated LowID paths against harness and live evidence.
+
+### `ITEM_035` — Add preview, browsing, and active notes parity surfaces
+
+- Status: `TODO`
+- Priority: `P1`
+- Lane: `ed2k_full_parity`
+- Area: `ed2k_surface`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope: preview request/answer, shared-files and shared-directories browsing, and active ED2K notes search.
+- Next steps: Land these surfaces in staged slices with harness-visible evidence for each slice, keeping preview first if it is needed by current peer behavior and preserving notes-search truthfulness at the API boundary once the transport path is added.
+
+### `ITEM_036` — Tighten downloader scheduling and broader server-session parity
+
+- Status: `TODO`
+- Priority: `P1`
+- Lane: `ed2k_full_parity`
+- Area: `ed2k_scheduler`
+- Source: `ED2K_072A_FULL_PARITY_TRACKER`
+- Summary: After the modern transport path and the core peer state machines are truthful, the remaining gaps shift toward broader `ServerSocket.cpp` coverage and downloader scheduling behavior where stock `v0.72a` still makes materially different A4AF or global scheduler decisions.
+- Next steps: Port the remaining server-session behavior that affects live acceptance, align the downloader scheduler where stock behavior materially changes peer interaction, and keep each change gated by focused tests plus private and live parity evidence.
+
+## Kad Live-Acceptance Lane
+
+This lane stays active in parallel with ED2K. Its priority is live-network
+acceptance, transport shape, replay fidelity, note result correctness, and NAT
+cleanup where those gaps affect harvest yield or peer behavior.
 
 ### `ITEM_001` — Improve Kad publish acceptance parity and validate harvest warm-up
 
 - Status: `IN_PROGRESS`
 - Priority: `P1`
+- Lane: `kad_live_acceptance`
 - Area: `kad`
 - Source: `TODO-20260322-001`, `TODONEXTKAD`
 - Summary: Lift Overlord publish acceptance density toward the oracle and re-check whether stronger publish acceptance starts warming harvested demand on the live network.
 - Next steps: Fix the remaining acceptance-rate gap, run longer matched agent/oracle sessions, compare accepted versus timed-out contacts, and preserve the first session where unsolicited demand clearly warms up.
 
-### `ITEM_002` — Fix Kad publish observability roll-up counters in agent stats
-
-- Status: `DONE`
-- Priority: `P1`
-- Area: `kad_observability`
-- Source: `TODO-20260322-001`
-- Summary: Aggregate publish counters in `/api/internal/stats` now project in-flight keyword/source progress from the current batch and expose first-class notes publish batch/counter telemetry when notes publish is enabled.
-- Validation: `cargo test -p overlord-agent-emule`, `cargo test -p overlord-agent-common`, `kad2.cell.notes.publish.private.v1`, and `kad2.campaign.publish-families.v1` passed on April 25, 2026.
-
-### `ITEM_003` — Fix lingering UPnP mappings after real agent shutdown
-
-- Status: `TODO`
-- Priority: `P1`
-- Area: `nat`
-- Source: `TODO-20260321-001`
-- Summary: The real end-to-end agent run can still leave `41000/41001` mappings behind after shutdown even though the live UPnP path works and manual cleanup succeeds.
-- Next steps: Trace shutdown-time mapping release, compare real-run teardown with the working direct UPnP path, and preserve the first clean run where the mappings disappear automatically.
-
 ### `ITEM_004` — Finish oracle-like Kad transport and packet-tracking parity
 
 - Status: `TODO`
 - Priority: `P1`
+- Lane: `kad_live_acceptance`
 - Area: `kad_net`
 - Source: `TODONEXTKAD`
 - Summary: Recent local `>2 GiB` harness<->agent runs exposed and fixed a reverse-Kad obfuscated source-publish identity mismatch, but broader obfuscation details and packet-tracking behavior still need to converge toward modern eMule traffic under load.
@@ -112,6 +190,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 - Status: `TODO`
 - Priority: `P1`
+- Lane: `kad_live_acceptance`
 - Area: `kad_replay`
 - Source: `TODO-20260322-001`, `TODONEXTKAD`
 - Summary: Source replay is live, but source-search scheduling and replay ordering still diverge from the oracle enough to affect result density.
@@ -121,6 +200,7 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 - Status: `TODO`
 - Priority: `P1`
+- Lane: `kad_live_acceptance`
 - Area: `kad_replay`
 - Source: `TODONEXTKAD`
 - Summary: The current snoop queue is still too target-centric to preserve all oracle-relevant keyword, source, and notes request details.
@@ -130,91 +210,56 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 - Status: `TODO`
 - Priority: `P1`
+- Lane: `kad_live_acceptance`
 - Area: `kad_notes`
 - Source: `TODONEXTKAD`
 - Summary: Coordinator-triggered Kad notes search is already wired end to end and was validated live on April 2, 2026. The remaining gap is result modeling: note replies are still projected into file-centric search results, so distinct note authors would collapse onto one file record.
 - Next steps: Add a note-aware coordinator result shape that preserves author identity at ingest and API boundaries, then rerun live validation against a file that returns multiple notes.
 
+### `ITEM_003` — Fix lingering UPnP mappings after real agent shutdown
+
+- Status: `TODO`
+- Priority: `P1`
+- Lane: `kad_live_acceptance`
+- Area: `nat`
+- Source: `TODO-20260321-001`
+- Summary: The real end-to-end agent run can still leave `41000/41001` mappings behind after shutdown even though the live UPnP path works and manual cleanup succeeds.
+- Next steps: Trace shutdown-time mapping release, compare real-run teardown with the working direct UPnP path, and preserve the first clean run where the mappings disappear automatically.
+
+## Completed Protocol Context
+
+These items stay visible until a later archive cleanup, but they do not count
+as active parity priorities.
+
+### `ITEM_002` — Fix Kad publish observability roll-up counters in agent stats
+
+- Status: `DONE`
+- Priority: `P1`
+- Lane: `completed_context`
+- Area: `kad_observability`
+- Source: `TODO-20260322-001`
+- Summary: Aggregate publish counters in `/api/internal/stats` now project in-flight keyword/source progress from the current batch and expose first-class notes publish batch/counter telemetry when notes publish is enabled.
+- Validation: `cargo test -p overlord-agent-emule`, `cargo test -p overlord-agent-common`, `kad2.cell.notes.publish.private.v1`, and `kad2.campaign.publish-families.v1` passed on April 25, 2026.
+
 ### `ITEM_008` — Port routing `CanSplit` and per-bin `/24` clustering rules
 
 - Status: `DONE`
 - Priority: `P1`
+- Lane: `completed_context`
 - Area: `kad_routing`
 - Source: `TODONEXTKAD`
 - Summary: The oracle `CanSplit` predicate and per-bin two-per-`/24` anti-clustering cap are already in the Rust routing table and were live-validated on April 2, 2026. This pass added explicit rejection reasons, routing-side observability, targeted tests, and real-network evidence showing oracle-style split decisions during bootstrap and healthy live lookup results.
-- Next steps: Archive this item out of the active backlog on the next backlog cleanup pass. Treat any future routing work as new follow-up items tied to a concrete live behavior gap, not as unfinished `CanSplit` or per-bin `/24` parity.
+- Next steps: Keep visible for context until the next archive cleanup pass. Treat any future routing work as new follow-up items tied to a concrete live behavior gap, not as unfinished `CanSplit` or per-bin `/24` parity.
 
 ### `ITEM_009` — Rename misleading Kad proto semantic fields
 
 - Status: `DONE`
 - Priority: `P2`
+- Lane: `completed_context`
 - Area: `kad_proto`
 - Source: `TODONEXTKAD`
 - Summary: The remaining documented Kad semantic aliases were renamed to match oracle meaning directly, and the docs/code policy is now explicit that oracle naming wins with commentary layered on top.
-- Next steps: Archive this item out of the active backlog on the next cleanup pass. Treat future naming drift as follow-up parity bugs, not unfinished legacy cleanup.
-
-### `ITEM_010` — Drive ED2K parity beyond server search toward native sharing and transfer
-
-- Status: `IN_PROGRESS`
-- Priority: `P2`
-- Area: `ed2k`
-- Source: `TODO-20260322-001`
-- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. On April 26, 2026, `kad2.cell.keyword.search.obfuscated.realnet.v1.obfuscated-20260426-204828` passed with a verified obfuscated live payload. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
-- Next steps: Finish `ITEM_031` by making local AICH generation stock-truthful, then drive `ITEM_032` through `ITEM_036` in order until every still-advertised non-obsolete surface is either implemented or honestly de-advertised.
-
-### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
-
-- Status: `IN_PROGRESS`
-- Priority: `P2`
-- Area: `ed2k_aich`
-- Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: Deterministic `>2 GiB` loopback coverage is now green for the active modern path across direct ED2K and Kad-discovered transfers, including the reverse-Kad obfuscated harness download after the source-publish chunk-order fix. Modern AICH transport and verifier acceptance are proven on the active path, but locally synthesized AICH still diverges from the stock tracing harness for the same payload so the generation half of the item is not done yet.
-- Next steps: Keep the network-learned AICH identity authoritative on the active path, align the local AICH builder with the stock tracing harness so completed payloads generate the same root/hashset without peer-supplied AICH, rerun the local large-file matrix to keep both directions green, and then rerun the large-file realnet gate before opening `ITEM_032`.
-
-### `ITEM_032` — Make still-advertised non-obsolete ED2K features truthful
-
-- Status: `TODO`
-- Priority: `P2`
-- Area: `ed2k_truthfulness`
-- Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The tracker’s strong completion rule now treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. After AICH, the next truthfulness gap starts with chat/captcha.
-- Next steps: Audit the current hello, peer-capability, and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and begin with the chat/captcha advert because it is already called out by the tracker as the next explicit truthfulness target.
-
-### `ITEM_033` — Port stock UploadQueue credit, score, LowID, and friend-slot behavior
-
-- Status: `TODO`
-- Priority: `P2`
-- Area: `ed2k_upload_queue`
-- Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The listener upload subset is already serving files, but queue admission, credit weighting, LowID handling, and friend-slot behavior still lag stock `UploadQueue.cpp` semantics.
-- Next steps: Port the score inputs and state transitions that materially affect queue rank and slot assignment, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
-
-### `ITEM_034` — Complete buddy and callback parity for firewalled ED2K mode
-
-- Status: `TODO`
-- Priority: `P2`
-- Area: `ed2k_low_id`
-- Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: Callback-aware source acquisition is already wired, but the full buddy matrix, buddy tags, and firewalled callback behavior are still incomplete for truthful LowID parity.
-- Next steps: Implement buddy setup and teardown, callback state transitions, and buddy-tag parity for firewalled runs, then validate both plaintext and obfuscated LowID paths against harness and live evidence.
-
-### `ITEM_035` — Add preview, browsing, and active notes parity surfaces
-
-- Status: `TODO`
-- Priority: `P2`
-- Area: `ed2k_surface`
-- Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope: preview request/answer, shared-files and shared-directories browsing, and active ED2K notes search.
-- Next steps: Land these surfaces in staged slices with harness-visible evidence for each slice, keeping preview first if it is needed by current peer behavior and preserving notes-search truthfulness at the API boundary once the transport path is added.
-
-### `ITEM_036` — Tighten downloader scheduling and broader server-session parity
-
-- Status: `TODO`
-- Priority: `P2`
-- Area: `ed2k_scheduler`
-- Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: After the modern transport path and the core peer state machines are truthful, the remaining gaps shift toward broader `ServerSocket.cpp` coverage and downloader scheduling behavior where stock `v0.72a` still makes materially different A4AF or global scheduler decisions.
-- Next steps: Port the remaining server-session behavior that affects live acceptance, align the downloader scheduler where stock behavior materially changes peer interaction, and keep each change gated by focused tests plus private and live parity evidence.
+- Next steps: Keep visible for context until the next archive cleanup pass. Treat future naming drift as follow-up parity bugs, not unfinished legacy cleanup.
 
 ## Deferred Product And Platform Backlog
 
