@@ -27,8 +27,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 | Status | Count |
 |---|---:|
-| `IN_PROGRESS` | 5 |
-| `TODO` | 28 |
+| `IN_PROGRESS` | 6 |
+| `TODO` | 27 |
 | `BLOCKED` | 0 |
 | `DONE` | 3 |
 | `REJECTED` | 0 |
@@ -50,7 +50,7 @@ not drive active priority order.
 | `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_036` | Tighten downloader scheduling and broader server-session parity | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_scheduler` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_001` | Improve Kad publish acceptance parity and validate harvest warm-up | `IN_PROGRESS` | `P1` | `kad_live_acceptance` | `kad` | `TODO-20260322-001`, `TODONEXTKAD` |
 | `ITEM_004` | Finish oracle-like Kad transport and packet-tracking parity | `TODO` | `P1` | `kad_live_acceptance` | `kad_net` | `TODONEXTKAD` |
@@ -142,13 +142,13 @@ is still untruthful.
 
 ### `ITEM_035` — Add preview, browsing, and active notes parity surfaces
 
-- Status: `TODO`
+- Status: `IN_PROGRESS`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_surface`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope: preview request/answer, shared-files and shared-directories browsing, and active ED2K notes search.
-- Next steps: Land these surfaces in staged slices with harness-visible evidence for each slice, keeping preview first if it is needed by current peer behavior and preserving notes-search truthfulness at the API boundary once the transport path is added.
+- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope. Active ED2K notes requests now use the stock-aligned Kad notes search path for ED2K file hashes and preserve the requested protocol label in coordinator result batches. Preview request/answer plus shared-files and shared-directories browsing remain open.
+- Next steps: Add regression and scenario coverage for ED2K notes jobs, then implement preview and browsing surfaces or de-advertise any unsupported capability bits, starting with the smallest packet-level request/answer pair that stock peers can observe.
 
 ### `ITEM_036` — Tighten downloader scheduling and broader server-session parity
 
