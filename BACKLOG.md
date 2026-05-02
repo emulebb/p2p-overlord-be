@@ -49,7 +49,7 @@ not drive active priority order.
 | `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_036` | Tighten downloader scheduling and broader server-session parity | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_scheduler` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_001` | Improve Kad publish acceptance parity and validate harvest warm-up | `IN_PROGRESS` | `P1` | `kad_live_acceptance` | `kad` | `TODO-20260322-001`, `TODONEXTKAD` |
@@ -132,12 +132,12 @@ is still untruthful.
 
 ### `ITEM_034` — Complete buddy and callback parity for firewalled ED2K mode
 
-- Status: `TODO`
+- Status: `IN_PROGRESS`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_low_id`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: Callback-aware source acquisition is already wired, but the full buddy matrix, buddy tags, and firewalled callback behavior are still incomplete for truthful LowID parity.
+- Summary: Callback-aware source acquisition is wired for plaintext and obfuscated private cells, including callback-only source observation, callback request issuance, direct-dial suppression, and obfuscated found-sources metadata. The full buddy matrix, buddy tags, and firewalled callback behavior are still incomplete for truthful LowID parity.
 - Next steps: Implement buddy setup and teardown, callback state transitions, and buddy-tag parity for firewalled runs, then validate both plaintext and obfuscated LowID paths against harness and live evidence.
 
 ### `ITEM_035` — Add preview, browsing, and active notes parity surfaces
