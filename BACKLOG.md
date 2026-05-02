@@ -27,8 +27,8 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 | Status | Count |
 |---|---:|
-| `IN_PROGRESS` | 3 |
-| `TODO` | 30 |
+| `IN_PROGRESS` | 5 |
+| `TODO` | 28 |
 | `BLOCKED` | 0 |
 | `DONE` | 3 |
 | `REJECTED` | 0 |
@@ -47,8 +47,8 @@ not drive active priority order.
 |---|---|---|---|---|---|---|
 | `ITEM_010` | Drive ED2K parity beyond server search toward native sharing and transfer | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k` | `TODO-20260322-001` |
 | `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_036` | Tighten downloader scheduling and broader server-session parity | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_scheduler` | `ED2K_072A_FULL_PARITY_TRACKER` |
@@ -107,28 +107,28 @@ is still untruthful.
 - Area: `ed2k_aich`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
 - Summary: Modern AICH transport and verifier acceptance are proven on the active path, and local stock-fixture coverage now asserts the expected tracing-harness AICH root plus part hashes for deterministic large payloads. The item remains open until a fresh large-file real-network roundtrip proves that locally generated AICH stays truthful outside the local harness matrix.
-- Latest evidence: On May 2, 2026, `ed2k.cell.modern-aich.plaintext.server-roundtrip.large.realnet.v1.plaintext-20260502-154313` resolved the community tracing-harness runtime and reached live execution, but the AICH gate still failed in stage 1 because the agent acquired no usable sources, no MD4/AICH hashset, and no bytes for the harness-exported large file. The live stress cell `ed2k.cell.live-wire.stress.search-download.realnet.v1` then passed in bounded mode for all canonical terms: plaintext completed 4/6 downloads and obfuscated completed 2/6 downloads, with per-term search/source/dump evidence captured for `linux`, `ubuntu`, `fedora`, `freebsd`, `debian`, and `emule`.
-- Next steps: Keep `ITEM_031` in progress, preserve the community harness resolver, and focus the next AICH attempt on real-network source acquisition for freshly harness-exported files before promoting the large-file AICH gate to completed evidence.
+- Latest evidence: On May 2, 2026, `ed2k.cell.modern-aich.plaintext.server-roundtrip.large.realnet.v1.plaintext-20260502-154313` resolved the community tracing-harness runtime and reached live execution, but the AICH gate still failed in stage 1 because the agent acquired no usable sources, no MD4/AICH hashset, and no bytes for the harness-exported large file. The live stress cell `ed2k.cell.live-wire.stress.search-download.realnet.v1` then passed in bounded mode for all canonical terms: plaintext completed 4/6 downloads and obfuscated completed 2/6 downloads, with per-term search/source/dump evidence captured for `linux`, `ubuntu`, `fedora`, `freebsd`, `debian`, and `emule`. A later same-server AICH attempt, `ed2k.cell.modern-aich.plaintext.server-roundtrip.large.realnet.v1.plaintext-20260502-183400`, observed the harness live login server, prioritized that endpoint in the agent stage-1 source search without a source hint, and still found zero usable sources before timeout.
+- Next steps: Keep `ITEM_031` in progress, preserve the same-server live source-discovery evidence, and focus the next AICH attempt on why freshly harness-exported live files are not returned as usable sources before promoting the large-file AICH gate to completed evidence.
 
 ### `ITEM_032` — Make still-advertised non-obsolete ED2K features truthful
 
-- Status: `TODO`
+- Status: `IN_PROGRESS`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_truthfulness`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The tracker’s strong completion rule treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. After AICH, the next truthfulness gap starts with chat/captcha.
-- Next steps: Audit the current hello, peer-capability, and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and begin with the chat/captcha advert because it is already called out by the tracker as the next explicit truthfulness target.
+- Summary: The tracker’s strong completion rule treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. Chat/captcha and file comments remain parity backlog surfaces, but the hello and eMuleInfo profiles no longer advertise unsupported captcha, comment, or preview support.
+- Next steps: Continue auditing the current peer-capability and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and keep regression coverage proving advertised capability bits match implemented behavior.
 
 ### `ITEM_033` — Port stock UploadQueue credit, score, LowID, and friend-slot behavior
 
-- Status: `TODO`
+- Status: `IN_PROGRESS`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_upload_queue`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The listener upload subset is already serving files, but queue admission, credit weighting, LowID handling, and friend-slot behavior still lag stock `UploadQueue.cpp` semantics.
-- Next steps: Port the score inputs and state transitions that materially affect queue rank and slot assignment, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
+- Summary: The listener upload subset is already serving files. The first UploadQueue parity slice now uses deterministic score-ranked waiters for queue rank and slot promotion, with friend-slot boost, LowID penalty, duplicate reconnect refresh, and a neutral file-priority hook for the later catalog priority field. Credit persistence and stock harness/live parity evidence remain open.
+- Next steps: Add durable credit-aware score inputs, wire real friend/file-priority policy instead of test-only defaults, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
 
 ### `ITEM_034` — Complete buddy and callback parity for firewalled ED2K mode
 
