@@ -117,7 +117,7 @@ is still untruthful.
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_truthfulness`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The tracker’s strong completion rule treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. Chat/captcha and file comments remain parity backlog surfaces, but the hello and eMuleInfo profiles no longer advertise unsupported captcha, comment, or preview support.
+- Summary: The tracker’s strong completion rule treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. Chat/captcha and file comments remain parity backlog surfaces, but the hello and eMuleInfo profiles no longer advertise unsupported captcha, comment, or preview support. The server login advertises large-file capability, and `OP_OFFERFILES` now emits the matching high-size tag instead of saturating large shared-file sizes into the legacy low-size field.
 - Next steps: Continue auditing the current peer-capability and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and keep regression coverage proving advertised capability bits match implemented behavior.
 
 ### `ITEM_033` — Port stock UploadQueue credit, score, LowID, and friend-slot behavior
