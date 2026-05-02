@@ -127,7 +127,7 @@ is still untruthful.
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_upload_queue`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The listener upload subset is already serving files. The first UploadQueue parity slice now uses deterministic score-ranked waiters for queue rank and slot promotion, with friend-slot boost, LowID penalty, duplicate reconnect refresh, and a neutral file-priority hook for the later catalog priority field. Credit persistence and stock harness/live parity evidence remain open.
+- Summary: The listener upload subset is already serving files. The first UploadQueue parity slice now uses deterministic score-ranked waiters for queue rank and slot promotion, with friend-slot boost, LowID penalty, duplicate reconnect refresh, and a neutral file-priority hook for the later catalog priority field. Plaintext and obfuscated listener queue-only e2e cells now execute the native listener queue module. Credit persistence and stock harness/live parity evidence remain open.
 - Next steps: Add durable credit-aware score inputs, wire real friend/file-priority policy instead of test-only defaults, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
 
 ### `ITEM_034` — Complete buddy and callback parity for firewalled ED2K mode
