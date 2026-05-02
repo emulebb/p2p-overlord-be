@@ -147,8 +147,8 @@ is still untruthful.
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_surface`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope. Active ED2K notes requests now use the stock-aligned Kad notes search path for ED2K file hashes, preserve the requested protocol label in coordinator result batches, and have a passing private e2e cell. Preview request/answer plus shared-files and shared-directories browsing remain open.
-- Next steps: Keep `ed2k.cell.notes.search.private.v1` in the `ITEM_035` regression lane, then implement preview and browsing surfaces or de-advertise any unsupported capability bits, starting with the smallest packet-level request/answer pair that stock peers can observe.
+- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope. Active ED2K notes requests now use the stock-aligned Kad notes search path for ED2K file hashes, preserve the requested protocol label in coordinator result batches, and have a passing private e2e cell under `ed2k.campaign.surface.v1`. Preview request/answer plus shared-files and shared-directories browsing remain open.
+- Next steps: Keep `ed2k.campaign.surface.v1` as the `ITEM_035` regression lane, then implement preview and browsing surfaces or de-advertise any unsupported capability bits, starting with the smallest packet-level request/answer pair that stock peers can observe.
 
 ### `ITEM_036` — Tighten downloader scheduling and broader server-session parity
 
