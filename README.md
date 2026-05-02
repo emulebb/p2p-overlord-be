@@ -160,7 +160,7 @@ Use direct repo commands before finishing changes:
 
 - Repo-local rules are tracked in `./AGENTS.md`.
 - Agents repo: run `cargo fmt --all --check` and
-  `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all`.
+  `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all -W clippy::too_many_arguments -W clippy::type_complexity -W clippy::cognitive_complexity`.
 - Coordinator repo: run `npm run windows:quality`.
 - Coordinator repo portable alias: run `npm run quality`.
 - Privacy guard: from `p2p-overlord-tooling`, run

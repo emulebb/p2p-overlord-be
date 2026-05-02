@@ -12,6 +12,10 @@
   - `npm run check`
   - `npm run prisma:validate`
   - `npm run prisma:generate`
+- Do not add new oversized tracked source files or grow baselined oversized
+  files; the workspace source-size ratchet is enforced from tooling.
+- Keep tracked text files normalized to UTF-8 with LF endings; the workspace
+  line-ending guard is enforced from tooling.
 - For persisted-schema edits, also reset and rebuild the local DB through
   the `overlord-be-db` helper.
 - Persisted coordinator database objects must remain `snake_case`.

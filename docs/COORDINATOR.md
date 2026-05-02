@@ -12,7 +12,7 @@ pass typed data directly to page components — no CORS, no duplication.
 
 **Local validation baseline:** use the direct repo commands instead of wrapper
 scripts. For Rust changes, run `cargo fmt --all --check` and
-`cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all`
+`cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all -W clippy::too_many_arguments -W clippy::type_complexity -W clippy::cognitive_complexity`
 from `p2p-overlord-agents`. For coordinator changes, run `npm run
 windows:quality` from `p2p-overlord-be/overlord-be-coordinator`; that command
 covers Svelte checks, Prisma schema validation, and Prisma client generation.
