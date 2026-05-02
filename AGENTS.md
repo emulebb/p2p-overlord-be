@@ -14,6 +14,9 @@
   - `npm run prisma:generate`
 - Do not add new oversized tracked source files or grow baselined oversized
   files; the workspace source-size ratchet is enforced from tooling.
+- When touching oversized or locally complex source, opportunistically split or
+  simplify the touched area if the change is behavior-preserving, scoped, and
+  covered by targeted checks.
 - Keep tracked text files normalized to UTF-8 with LF endings; the workspace
   line-ending guard is enforced from tooling.
 - For persisted-schema edits, also reset and rebuild the local DB through
