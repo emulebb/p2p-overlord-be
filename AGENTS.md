@@ -4,9 +4,6 @@
   `../p2p-overlord-tooling/docs/WORKSPACE_POLICY.md`.
 - Use `docs/README.md` as the canonical backend docs home.
 - Use `BACKLOG.md` in this repo as the canonical active backlog.
-- Implement only latest/current Kad and ED2K protocol behavior by default.
-  Do not add legacy variants, obsolete fallbacks, or compatibility branches
-  unless explicitly re-scoped by the user.
 - In this repo, `overlord-be-coordinator` is the only formal Node package.
   `overlord-be-db` remains a Windows-only backend helper.
 - The conservative coordinator baseline is:
