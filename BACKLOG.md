@@ -186,7 +186,7 @@ closure is green or a live run proves a Kad blocker is on the critical path.
 - Lane: `kad_live_acceptance`
 - Area: `kad`
 - Source: `TODO-20260322-001`, `TODONEXTKAD`
-- Summary: Lift Overlord publish acceptance density toward the oracle and re-check whether stronger publish acceptance starts warming harvested demand on the live network.
+- Summary: Lift Overlord publish acceptance density toward the oracle and re-check whether stronger publish acceptance starts warming harvested demand on the live network. The May 10, 2026 stock audit tightened inbound keyword publishes so the Rust store now rejects entries without stock-required filename/positive-size metadata, replaces same-keyword/same-file/same-size entries instead of duplicating tag variants, and returns the stock `KADEMLIAMAXINDEX` load byte in `KADEMLIA2_PUBLISH_RES`.
 - Next steps: Fix the remaining acceptance-rate gap, run longer matched agent/oracle sessions, compare accepted versus timed-out contacts, and preserve the first session where unsolicited demand clearly warms up.
 
 ### `ITEM_004` — Finish oracle-like Kad transport and packet-tracking parity
