@@ -226,7 +226,7 @@ closure is green or a live run proves a Kad blocker is on the critical path.
 - Lane: `kad_live_acceptance`
 - Area: `kad_notes`
 - Source: `TODONEXTKAD`
-- Summary: Coordinator-triggered Kad notes search is already wired end to end and was validated live on April 2, 2026. The remaining gap is result modeling: note replies are still projected into file-centric search results, so distinct note authors would collapse onto one file record.
+- Summary: Coordinator-triggered Kad notes search is already wired end to end and was validated live on April 2, 2026. The May 10, 2026 stock audit tightened local notes publish handling so inbound notes now require stock-shaped source IP/tag identity, replace same-file notes by source IP or source ID like `CIndexed::AddNotes`, answer publish requests with the stock `KADEMLIAMAXNOTESPERFILE` load byte, and return newest notes first. The remaining gap is result modeling: note replies are still projected into file-centric search results, so distinct note authors would collapse onto one file record.
 - Next steps: Add a note-aware coordinator result shape that preserves author identity at ingest and API boundaries, then rerun live validation against a file that returns multiple notes.
 
 ### `ITEM_003` — Fix lingering UPnP mappings after real agent shutdown
