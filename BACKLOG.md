@@ -27,18 +27,28 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 
 | Status | Count |
 |---|---:|
-| `IN_PROGRESS` | 6 |
-| `TODO` | 27 |
+| `IN_PROGRESS` | 3 |
+| `TODO` | 30 |
 | `BLOCKED` | 0 |
 | `DONE` | 3 |
 | `REJECTED` | 0 |
 
-Active protocol work is tracked in two lanes:
+Active protocol work is tracked in two lanes, with ED2K agent-vs-eMule parity
+as the current push:
 
 - ED2K full parity: finish stock eMule `v0.72a` parity for every
   still-advertised non-obsolete ED2K behavior.
 - Kad live acceptance: close the remaining live-network acceptance,
   replay-fidelity, notes-modeling, transport, and NAT cleanup gaps.
+
+Current ED2K critical path:
+
+1. Close `ITEM_031` by fixing same-server live source discovery for the
+   large-file AICH closure cell.
+2. Keep `ITEM_032` capability truthfulness tight so unsupported surfaces stay
+   de-advertised until implemented.
+3. Resume `ITEM_033`, `ITEM_034`, `ITEM_036`, and finally the remaining
+   `ITEM_035` preview/browsing surfaces after the source/AICH blocker is green.
 
 Completed protocol items remain visible in this file for context, but they do
 not drive active priority order.
@@ -47,10 +57,10 @@ not drive active priority order.
 |---|---|---|---|---|---|---|
 | `ITEM_010` | Drive ED2K parity beyond server search toward native sharing and transfer | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k` | `TODO-20260322-001` |
 | `ITEM_031` | Implement truthful modern AICH generation, transport, and verification | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_aich` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
-| `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `IN_PROGRESS` | `P1` | `ed2k_full_parity` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_032` | Make still-advertised non-obsolete ED2K features truthful | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_truthfulness` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_033` | Port stock UploadQueue credit, score, LowID, and friend-slot behavior | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_upload_queue` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_034` | Complete buddy and callback parity for firewalled ED2K mode | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_low_id` | `ED2K_072A_FULL_PARITY_TRACKER` |
+| `ITEM_035` | Add preview, browsing, and active notes parity surfaces | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_surface` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_036` | Tighten downloader scheduling and broader server-session parity | `TODO` | `P1` | `ed2k_full_parity` | `ed2k_scheduler` | `ED2K_072A_FULL_PARITY_TRACKER` |
 | `ITEM_001` | Improve Kad publish acceptance parity and validate harvest warm-up | `IN_PROGRESS` | `P1` | `kad_live_acceptance` | `kad` | `TODO-20260322-001`, `TODONEXTKAD` |
 | `ITEM_004` | Finish oracle-like Kad transport and packet-tracking parity | `TODO` | `P1` | `kad_live_acceptance` | `kad_net` | `TODONEXTKAD` |
@@ -85,9 +95,9 @@ not drive active priority order.
 ## ED2K Full Parity Lane
 
 This lane is the main active parity sequence. The target remains full stock
-eMule `v0.72a` parity, excluding only explicitly obsolete ED2K surfaces. Do not
-open later feature-surface work as complete while earlier advertised behavior
-is still untruthful.
+eMule `v0.72a` parity, excluding only explicitly obsolete ED2K surfaces. The
+current active blocker is `ITEM_031`; keep later feature-surface work queued
+unless it is needed to keep currently advertised behavior truthful.
 
 ### `ITEM_010` — Drive ED2K parity beyond server search toward native sharing and transfer
 
@@ -97,11 +107,11 @@ is still untruthful.
 - Area: `ed2k`
 - Source: `TODO-20260322-001`
 - Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. On April 26, 2026, `kad2.cell.keyword.search.obfuscated.realnet.v1.obfuscated-20260426-204828` passed with a verified obfuscated live payload. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
-- Next steps: Close `ITEM_031` with fresh large-file real-network evidence, then drive `ITEM_032` through `ITEM_036` in order until every still-advertised non-obsolete surface is either implemented or honestly de-advertised.
+- Next steps: Close `ITEM_031` with fresh large-file real-network evidence, then drive `ITEM_032`, `ITEM_033`, `ITEM_034`, `ITEM_036`, and the remaining `ITEM_035` surfaces in order until every still-advertised non-obsolete surface is either implemented or honestly de-advertised.
 
 ### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
 
-- Status: `IN_PROGRESS`
+- Status: `TODO`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_aich`
@@ -118,37 +128,37 @@ is still untruthful.
 - Area: `ed2k_truthfulness`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
 - Summary: The tracker’s strong completion rule treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. Chat/captcha and file comments remain parity backlog surfaces, but the hello and eMuleInfo profiles no longer advertise unsupported captcha, comment, or preview support. The server login advertises large-file capability, and `OP_OFFERFILES` now emits the matching high-size tag instead of saturating large shared-file sizes into the legacy low-size field. ED2K server obfuscated transport selection now also requires explicit capability flags rather than treating an auxiliary obfuscation port as sufficient by itself.
-- Next steps: Continue auditing the current peer-capability and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and keep regression coverage proving advertised capability bits match implemented behavior.
+- Next steps: Resume immediately after `ITEM_031` or sooner if a live blocker exposes a false advert. Continue auditing the current peer-capability and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and keep regression coverage proving advertised capability bits match implemented behavior.
 
 ### `ITEM_033` — Port stock UploadQueue credit, score, LowID, and friend-slot behavior
 
-- Status: `IN_PROGRESS`
+- Status: `TODO`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_upload_queue`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
 - Summary: The listener upload subset is already serving files. The first UploadQueue parity slice now uses deterministic score-ranked waiters for queue rank and slot promotion, with friend-slot boost, LowID penalty, duplicate reconnect refresh, and a neutral file-priority hook for the later catalog priority field. Plaintext and obfuscated downloader/listener queue-only e2e cells now execute through the runnable queue-and-slot campaign; obfuscated listener serving and the plaintext/obfuscated downloader/listener resume cells also execute native upload-byte and partial-piece resume coverage through the runnable resume campaign. Credit persistence and stock harness/live parity evidence remain open.
-- Next steps: Add durable credit-aware score inputs, wire real friend/file-priority policy instead of test-only defaults, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
+- Next steps: After the source/AICH blocker is green, add durable credit-aware score inputs, wire real friend/file-priority policy instead of test-only defaults, validate queue-rank and accept/deny behavior against harness evidence, and preserve the first live run where Overlord’s upload queue behavior stops diverging from stock `v0.72a`.
 
 ### `ITEM_034` — Complete buddy and callback parity for firewalled ED2K mode
 
-- Status: `IN_PROGRESS`
+- Status: `TODO`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_low_id`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
 - Summary: Callback-aware source acquisition is wired for plaintext and obfuscated private cells, including callback-only source observation, callback request issuance, direct-dial suppression, and obfuscated found-sources metadata. The full buddy matrix, buddy tags, and firewalled callback behavior are still incomplete for truthful LowID parity.
-- Next steps: Implement buddy setup and teardown, callback state transitions, and buddy-tag parity for firewalled runs, then validate both plaintext and obfuscated LowID paths against harness and live evidence.
+- Next steps: After the core source and transfer path is green, implement buddy setup and teardown, callback state transitions, and buddy-tag parity for firewalled runs, then validate both plaintext and obfuscated LowID paths against harness and live evidence.
 
 ### `ITEM_035` — Add preview, browsing, and active notes parity surfaces
 
-- Status: `IN_PROGRESS`
+- Status: `TODO`
 - Priority: `P1`
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_surface`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope. Active ED2K notes requests now use the stock-aligned Kad notes search path for ED2K file hashes, preserve the requested protocol label in coordinator result batches, and have a passing private e2e cell under `ed2k.campaign.surface.v1`. Preview request/answer plus shared-files and shared-directories browsing remain open.
-- Next steps: Keep `ed2k.campaign.surface.v1` as the `ITEM_035` regression lane, then implement preview and browsing surfaces or de-advertise any unsupported capability bits, starting with the smallest packet-level request/answer pair that stock peers can observe.
+- Summary: Several non-obsolete peer-facing ED2K surfaces remain unsupported even though they are still in scope. Active ED2K notes requests are complete for the first parity slice: they use the stock-aligned Kad notes search path for ED2K file hashes, preserve the requested protocol label in coordinator result batches, and have a passing private e2e cell under `ed2k.campaign.surface.v1`. Preview request/answer plus shared-files and shared-directories browsing remain open.
+- Next steps: Keep `ed2k.campaign.surface.v1` as the `ITEM_035` regression lane, then implement preview and browsing surfaces or de-advertise any unsupported capability bits after the core transfer, queue, callback, and scheduler path is truthful. Start with the smallest packet-level request/answer pair that stock peers can observe.
 
 ### `ITEM_036` — Tighten downloader scheduling and broader server-session parity
 
@@ -162,9 +172,10 @@ is still untruthful.
 
 ## Kad Live-Acceptance Lane
 
-This lane stays active in parallel with ED2K. Its priority is live-network
-acceptance, transport shape, replay fidelity, note result correctness, and NAT
-cleanup where those gaps affect harvest yield or peer behavior.
+This lane stays visible while ED2K parity is the current push. Keep `ITEM_001`
+active as the only parallel Kad lane because publish acceptance affects harvest
+yield directly; leave the remaining Kad items queued until ED2K source/AICH
+closure is green or a live run proves a Kad blocker is on the critical path.
 
 ### `ITEM_001` — Improve Kad publish acceptance parity and validate harvest warm-up
 
