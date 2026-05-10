@@ -216,8 +216,8 @@ closure is green or a live run proves a Kad blocker is on the critical path.
 - Lane: `kad_live_acceptance`
 - Area: `kad_replay`
 - Source: `TODONEXTKAD`
-- Summary: The current snoop queue is still too target-centric to preserve all oracle-relevant keyword, source, and notes request details.
-- Next steps: Extend the stored request shape, keep conversion localized at the edge, and replay the same demand shape the network actually asked for.
+- Summary: The current snoop queue is still too target-centric to preserve all oracle-relevant keyword, source, and notes request details. The Rust Kad source-request codec now preserves and stock-masks the `KADEMLIA2_SEARCH_SOURCE_REQ` start-position field instead of discarding it on decode, so harvested source replay can retain paged source demand shape.
+- Next steps: Extend the remaining stored request shape, keep conversion localized at the edge, and replay the same demand shape the network actually asked for.
 
 ### `ITEM_007` — Preserve per-author Kad notes results after live validation
 
