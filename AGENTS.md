@@ -4,6 +4,9 @@
   `../p2p-overlord-tooling/docs/WORKSPACE_POLICY.md`.
 - Use `docs/README.md` as the canonical backend docs home.
 - Use `BACKLOG.md` in this repo as the canonical active backlog.
+- Target full stock eMule `v0.72a` Kad and ED2K parity, including deprecated
+  legacy compatibility behavior. The only standing protocol exception is
+  defunct ED2K PeerCache support.
 - In this repo, `overlord-be-coordinator` is the only formal Node package.
   `overlord-be-db` remains a Windows-only backend helper.
 - The conservative coordinator baseline is:

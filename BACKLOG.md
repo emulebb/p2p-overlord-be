@@ -36,8 +36,9 @@ This is the only active backlog file. Legacy backlog markdown sources have been 
 Active protocol work is tracked in two lanes, with ED2K agent-vs-eMule parity
 as the current push:
 
-- ED2K full parity: finish stock eMule `v0.72a` parity for every
-  still-advertised non-obsolete ED2K behavior.
+- ED2K full parity: finish stock eMule `v0.72a` parity, including deprecated
+  legacy compatibility behavior. The only standing ED2K protocol exception is
+  defunct PeerCache support.
 - Kad live acceptance: close the remaining live-network acceptance,
   replay-fidelity, notes-modeling, transport, and NAT cleanup gaps.
 
@@ -95,9 +96,10 @@ not drive active priority order.
 ## ED2K Full Parity Lane
 
 This lane is the main active parity sequence. The target remains full stock
-eMule `v0.72a` parity, excluding only explicitly obsolete ED2K surfaces. The
-current active blocker is `ITEM_031`; keep later feature-surface work queued
-unless it is needed to keep currently advertised behavior truthful.
+eMule `v0.72a` parity, including deprecated legacy compatibility behavior. The
+only standing ED2K protocol exception is defunct PeerCache support. The current
+active blocker is `ITEM_031`; keep later feature-surface work queued unless it
+is needed to keep currently advertised behavior truthful.
 
 ### `ITEM_010` — Drive ED2K parity beyond server search toward native sharing and transfer
 
@@ -106,7 +108,7 @@ unless it is needed to keep currently advertised behavior truthful.
 - Lane: `ed2k_full_parity`
 - Area: `ed2k`
 - Source: `TODO-20260322-001`
-- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. On April 26, 2026, `kad2.cell.keyword.search.obfuscated.realnet.v1.obfuscated-20260426-204828` passed with a verified obfuscated live payload. The remaining job is full native stock `v0.72a` parity for non-obsolete server and peer behavior without depending on an external client.
+- Summary: ED2K keyword search, paged results, source search, offer-files advertisement, hash-only bootstrap, and the current live same-server roundtrip gates are now wired. Deterministic local large-file loopback coverage also exists for the active direct-ED2K and Kad-discovered transfer paths. On April 26, 2026, `kad2.cell.keyword.search.obfuscated.realnet.v1.obfuscated-20260426-204828` passed with a verified obfuscated live payload. The remaining job is full native stock `v0.72a` parity for server and peer behavior, including deprecated compatibility behavior except PeerCache, without depending on an external client.
 - Next steps: Close `ITEM_031` with fresh large-file real-network evidence, then drive `ITEM_032`, `ITEM_033`, `ITEM_034`, `ITEM_036`, and the remaining `ITEM_035` surfaces in order until every still-advertised non-obsolete surface is either implemented or honestly de-advertised.
 
 ### `ITEM_031` — Implement truthful modern AICH generation, transport, and verification
@@ -127,7 +129,7 @@ unless it is needed to keep currently advertised behavior truthful.
 - Lane: `ed2k_full_parity`
 - Area: `ed2k_truthfulness`
 - Source: `ED2K_072A_FULL_PARITY_TRACKER`
-- Summary: The tracker’s strong completion rule treats every still-advertised non-obsolete ED2K feature as in scope until it is implemented or the advert is corrected. Chat/captcha and file comments remain parity backlog surfaces, but the hello and eMuleInfo profiles no longer advertise unsupported captcha, comment, or preview support. The server login advertises large-file capability, and `OP_OFFERFILES` now emits the matching high-size tag instead of saturating large shared-file sizes into the legacy low-size field. ED2K server obfuscated transport selection now also requires explicit capability flags rather than treating an auxiliary obfuscation port as sufficient by itself.
+- Summary: The tracker’s strong completion rule treats every stock eMule `v0.72a` ED2K feature as in scope until it is implemented or the advert is corrected, including deprecated compatibility behavior except PeerCache. Chat/captcha and file comments remain parity backlog surfaces, but the hello and eMuleInfo profiles no longer advertise unsupported captcha, comment, or preview support. The server login advertises large-file capability, and `OP_OFFERFILES` now emits the matching high-size tag instead of saturating large shared-file sizes into the legacy low-size field. ED2K server obfuscated transport selection now also requires explicit capability flags rather than treating an auxiliary obfuscation port as sufficient by itself.
 - Next steps: Resume immediately after `ITEM_031` or sooner if a live blocker exposes a false advert. Continue auditing the current peer-capability and server-session advert surfaces, make each unsupported feature either implemented or honestly de-advertised, and keep regression coverage proving advertised capability bits match implemented behavior.
 
 ### `ITEM_033` — Port stock UploadQueue credit, score, LowID, and friend-slot behavior
