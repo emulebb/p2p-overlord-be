@@ -186,8 +186,8 @@ closure is green or a live run proves a Kad blocker is on the critical path.
 - Lane: `kad_live_acceptance`
 - Area: `kad`
 - Source: `TODO-20260322-001`, `TODONEXTKAD`
-- Summary: Lift Overlord publish acceptance density toward the oracle and re-check whether stronger publish acceptance starts warming harvested demand on the live network. The May 10, 2026 stock audit tightened inbound keyword publishes so the Rust store now rejects entries without stock-required filename/positive-size metadata, replaces same-keyword/same-file/same-size entries instead of duplicating tag variants, returns the stock `KADEMLIAMAXINDEX` load byte in `KADEMLIA2_PUBLISH_RES`, and materializes keyword search results with stock publish-info plus AICH-result tags instead of echoing publish-only AICH tags.
-- Next steps: Fix the remaining acceptance-rate gap, run longer matched agent/oracle sessions, compare accepted versus timed-out contacts, and preserve the first session where unsolicited demand clearly warms up.
+- Summary: Lift Overlord publish acceptance density toward the oracle and re-check whether stronger publish acceptance starts warming harvested demand on the live network. The May 10, 2026 stock audit tightened inbound keyword publishes so the Rust store now rejects entries without stock-required filename/positive-size metadata, replaces same-keyword/same-file/same-size entries instead of duplicating tag variants, returns the stock `KADEMLIAMAXINDEX` load byte in `KADEMLIA2_PUBLISH_RES`, materializes keyword search results with stock publish-info plus AICH-result tags instead of echoing publish-only AICH tags, and now honors stock restrictive keyword search expressions for local Kad keyword responses, including string, meta-string, numeric, boolean, binary NOT, file-extension, and post-filter start-offset behavior.
+- Next steps: Fix the remaining acceptance-rate gap, add stock multi-packet search-result fragmentation before raising result caps to the 300/150 stock maxima, run longer matched agent/oracle sessions, compare accepted versus timed-out contacts, and preserve the first session where unsolicited demand clearly warms up.
 
 ### `ITEM_004` — Finish oracle-like Kad transport and packet-tracking parity
 
@@ -196,8 +196,8 @@ closure is green or a live run proves a Kad blocker is on the critical path.
 - Lane: `kad_live_acceptance`
 - Area: `kad_net`
 - Source: `TODONEXTKAD`
-- Summary: Recent local `>2 GiB` harness<->agent runs exposed and fixed a reverse-Kad obfuscated source-publish identity mismatch, but broader obfuscation details and packet-tracking behavior still need to converge toward modern eMule traffic under load.
-- Next steps: Keep the new source-connect instrumentation, port the remaining transport details, replace generic packet tracking with oracle-like logic, and keep re-validating against both local large-file gates and live captures.
+- Summary: Recent local `>2 GiB` harness<->agent runs exposed and fixed a reverse-Kad obfuscated source-publish identity mismatch, but broader obfuscation details and packet-tracking behavior still need to converge toward modern eMule traffic under load. Stock eMule also fragments `KADEMLIA2_SEARCH_RES` pages around `UDP_KAD_MAXFRAGMENT` while allowing up to 300 keyword/source and 150 notes results per request; the Rust local-response path still uses a conservative single-packet cap until fragmentation is ported.
+- Next steps: Keep the new source-connect instrumentation, port the remaining transport details including stock search-result fragmentation and page caps, replace generic packet tracking with oracle-like logic, and keep re-validating against both local large-file gates and live captures.
 
 ### `ITEM_005` — Align passive source-search scheduling cadence and replay ordering with the oracle
 
