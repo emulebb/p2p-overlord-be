@@ -12,7 +12,7 @@ pass typed data directly to page components — no CORS, no duplication.
 
 The coordinator API below is p2p-overlord's internal coordinator surface. Any
 future eMuleBB-compatible `/api/v1` facade must use
-`repos/eMule-tooling/docs/rest/REST-API-OPENAPI.yaml` as the canonical contract
+`repos/emulebb-tooling/docs/rest/REST-API-OPENAPI.yaml` as the canonical contract
 and publish claimed-subset conformance evidence.
 
 **Local validation baseline:** use the direct repo commands instead of wrapper

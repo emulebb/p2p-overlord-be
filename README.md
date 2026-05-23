@@ -19,10 +19,10 @@ Current repo surface:
 
 ## eMuleBB Product-Family Contracts
 
-This repo now lives under `https://github.com/eMulebb/p2p-overlord-be`. The
+This repo now lives under `https://github.com/emulebb/p2p-overlord-be`. The
 coordinator keeps its own internal REST/SSE API, but any eMuleBB-compatible
 `/api/v1` surface must prove its claimed subset against
-`repos/eMule-tooling/docs/rest/REST-API-OPENAPI.yaml`.
+`repos/emulebb-tooling/docs/rest/REST-API-OPENAPI.yaml`.
 
 ## Repo Surfaces
 

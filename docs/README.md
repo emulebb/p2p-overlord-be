@@ -25,7 +25,7 @@ Current repo surfaces:
 ## eMuleBB Product-Family Notes
 
 - The canonical eMuleBB-compatible REST contract is
-  `repos/eMule-tooling/docs/rest/REST-API-OPENAPI.yaml`.
+  `repos/emulebb-tooling/docs/rest/REST-API-OPENAPI.yaml`.
 - Deterministic ED2K server scenarios should use the eMuleBB `goed2k-server`
   fork, not the obsolete `emulebb-ed2k-server` fork or p2p-overlord ED2K server
   lineage.
@@ -38,7 +38,7 @@ Current repo surfaces:
 ## Repo Guards
 
 - In the eMuleBB workspace, shared workspace policy lives in
-  `../eMule-tooling/docs/WORKSPACE-POLICY.md`. In the standalone
+  `../emulebb-tooling/docs/WORKSPACE-POLICY.md`. In the standalone
   p2p-overlord workspace, shared workspace quality and
   opportunistic-refactoring policy lives in
   `../../p2p-overlord-tooling/docs/WORKSPACE_POLICY.md`. This section keeps the
