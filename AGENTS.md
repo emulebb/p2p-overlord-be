@@ -1,6 +1,9 @@
 # Backend Repo Rules
 
-- Follow the shared workspace policy in
+- Follow the eMuleBB workspace policy in
+  `../eMule-tooling/docs/WORKSPACE-POLICY.md` when this repo is checked out
+  under `EMULE_WORKSPACE_ROOT\repos`.
+- If the standalone p2p-overlord workspace is in use, also follow
   `../p2p-overlord-tooling/docs/WORKSPACE_POLICY.md`.
 - Use `docs/README.md` as the canonical backend docs home.
 - Use `BACKLOG.md` in this repo as the canonical active backlog.

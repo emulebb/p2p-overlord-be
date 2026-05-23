@@ -10,6 +10,11 @@ SvelteKit server routes (`+server.ts`) are the REST API. SvelteKit `+page.svelte
 the SSR-rendered UI pages. The BFF pattern is native: load functions run server-side and
 pass typed data directly to page components — no CORS, no duplication.
 
+The coordinator API below is p2p-overlord's internal coordinator surface. Any
+future eMuleBB-compatible `/api/v1` facade must use
+`repos/eMule-tooling/docs/rest/REST-API-OPENAPI.yaml` as the canonical contract
+and publish claimed-subset conformance evidence.
+
 **Local validation baseline:** use the direct repo commands instead of wrapper
 scripts. For Rust changes, run `cargo fmt --all --check` and
 `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all -W clippy::too_many_arguments -W clippy::type_complexity -W clippy::cognitive_complexity`

@@ -40,8 +40,8 @@ workspace and on GitHub:
 - `overlord-agent-*` for protocol agents and their shared Rust support crates
 
 **Repo layout policy:** backend services live under `p2p-overlord-be/`, Rust
-agents live together under `p2p-overlord-agents/`, and the active local ED2K
-server lives under `p2p-overlord-ed2k-server/`.
+agents live together under `p2p-overlord-agents/`, and deterministic ED2K
+server scenarios use the eMuleBB `goed2k-server` fork.
 
 **Current implementation note:** only `SVC-001` and `SVC-002` are present in the
 tree today. `SVC-003` through `SVC-005` remain the documented target-state
@@ -79,9 +79,7 @@ p2p-overlord/
 │       ├── overlord-kad-*/          # Kad protocol, routing, transport, and DHT crates
 │       ├── miniupnpc*/              # local MiniUPnPc wrapper and bindings
 │       └── overlord-tools/          # developer/helper binaries
-├── p2p-overlord-ed2k-server/        # local ED2K server for parity scenarios
-│   ├── cmd/overlord-ed2k-server/
-│   └── ed2ksrv/
+├── ../goed2k-server/                # eMuleBB ED2K server fork for parity scenarios
 ```
 
 **No separate frontend package.** The SvelteKit app inside

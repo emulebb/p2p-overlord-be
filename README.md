@@ -9,13 +9,20 @@ Current repo surface:
 
 - `overlord-be-coordinator` is the only formal Node package in this repo today.
 - `overlord-be-db` is a Windows-only local DB runtime helper, not a separate package.
-- The broader multi-protocol service map below remains the target-state architecture. Today the in-tree runtime surface is the coordinator, `overlord-agent-emule` from `p2p-overlord-agents`, and the local ED2K server from `p2p-overlord-ed2k-server`.
+- The broader multi-protocol service map below remains the target-state architecture. Today the in-tree runtime surface is the coordinator, `overlord-agent-emule` from `p2p-overlord-agents`, and deterministic ED2K server scenarios use the eMuleBB `goed2k-server` fork.
 
 ---
 
 ## About
 
-`p2p-overlord` is a microservices system that targets passive and active file-metadata harvest across KAD, ED2K, BitTorrent DHT, Gnutella G2, and IPFS. The target architecture keeps one coordinator service (SvelteKit/Node.js) in charge of PostgreSQL, the REST API, the SSR frontend, and cross-protocol intelligence while Rust indexer agents specialize per protocol family. The current in-tree implementation is narrower: the coordinator is present in this repo today, the current agent workspace in `p2p-overlord-agents` exposes `overlord-agent-emule` plus shared/support crates, and `p2p-overlord-ed2k-server` provides the local ED2K server used by parity scenarios. The same file found across multiple networks still collapses into a single database record with multiple source sets in the intended target design. The system is designed to run on one machine now and scale out later.
+`p2p-overlord` is a microservices system that targets passive and active file-metadata harvest across KAD, ED2K, BitTorrent DHT, Gnutella G2, and IPFS. The target architecture keeps one coordinator service (SvelteKit/Node.js) in charge of PostgreSQL, the REST API, the SSR frontend, and cross-protocol intelligence while Rust indexer agents specialize per protocol family. The current in-tree implementation is narrower: the coordinator is present in this repo today, and the current agent workspace in `p2p-overlord-agents` exposes `overlord-agent-emule` plus shared/support crates. ED2K server parity uses the eMuleBB `goed2k-server` fork. The same file found across multiple networks still collapses into a single database record with multiple source sets in the intended target design. The system is designed to run on one machine now and scale out later.
+
+## eMuleBB Product-Family Contracts
+
+This repo now lives under `https://github.com/eMulebb/p2p-overlord-be`. The
+coordinator keeps its own internal REST/SSE API, but any eMuleBB-compatible
+`/api/v1` surface must prove its claimed subset against
+`repos/eMule-tooling/docs/rest/REST-API-OPENAPI.yaml`.
 
 ## Repo Surfaces
 
