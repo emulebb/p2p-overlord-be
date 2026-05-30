@@ -1,57 +1,140 @@
 # p2p-overlord
 
-> Multi-protocol P2P indexer. Crawls KAD, ED2K, BitTorrent DHT, Gnutella G2, and IPFS 24/7.
-> Aggregates metadata into a unified PostgreSQL index with cross-protocol deduplication.
+`p2p-overlord` is a multi-protocol P2P metadata indexer, protocol-parity lab,
+and coordinator. It combines Rust wire-protocol agents, a SvelteKit/Node
+coordinator, PostgreSQL storage, and reproducible parity tooling to harvest,
+normalize, and deduplicate file metadata from peer-to-peer networks.
 
-See [docs/README.md](docs/README.md) for the structured backend specification.
+The current implementation is concentrated on eMule Kad/eD2K. That work is not
+just a sketch: the workspace already contains a native Rust eMule agent, a live
+coordinator, deterministic eMule harness scenarios, real-network confidence
+cells, local file ingest, shared-catalog support, native download/upload paths,
+queue/resume/callback coverage, modern AICH/hashset handling, and a growing
+stock-wire parity matrix.
 
-Current repo surface:
+The broader target is one coordinator with specialized protocol agents for Kad,
+eD2K, BitTorrent DHT, Gnutella G2, and IPFS. Today the release focus is the
+Kad/eD2K RC1.
 
-- `overlord-be-coordinator` is the only formal Node package in this repo today.
-- `overlord-be-db` is a Windows-only local DB runtime helper, not a separate package.
-- The broader multi-protocol service map below remains the target-state architecture. Today the in-tree runtime surface is the coordinator, `overlord-agent-emule` from `p2p-overlord-agents`, and deterministic ED2K server scenarios use the eMuleBB `goed2k-server` fork.
+## Why This Exists
 
----
+P2P networks still contain useful, decentralized metadata, but each network
+speaks a different protocol and exposes different evidence about the same file.
+`p2p-overlord` is built to make that data operational:
 
-## About
+- crawl and search live networks through protocol-native agents;
+- collapse the same file across protocols into one canonical record;
+- preserve per-network sources, hashes, tags, names, and observations;
+- prove protocol behavior with deterministic and live parity scenarios;
+- keep protocol work close to stock peer behavior where interoperability depends
+  on it.
 
-`p2p-overlord` is a microservices system that targets passive and active file-metadata harvest across KAD, ED2K, BitTorrent DHT, Gnutella G2, and IPFS. The target architecture keeps one coordinator service (SvelteKit/Node.js) in charge of PostgreSQL, the REST API, the SSR frontend, and cross-protocol intelligence while Rust indexer agents specialize per protocol family. The current in-tree implementation is narrower: the coordinator is present in this repo today, and the current agent workspace in `p2p-overlord-agents` exposes `overlord-agent-emule` plus shared/support crates. ED2K server parity uses the eMuleBB `goed2k-server` fork. The same file found across multiple networks still collapses into a single database record with multiple source sets in the intended target design. The system is designed to run on one machine now and scale out later.
+This is both an indexer and a serious compatibility effort.
 
-## eMuleBB Product-Family Contracts
+## What Is Already Built
 
-This repo now lives under `https://github.com/emulebb/p2p-overlord-be`. The
-coordinator keeps its own internal REST/SSE API, but any eMuleBB-compatible
-`/api/v1` surface must prove its claimed subset against
-`repos/emulebb-tooling/docs/rest/REST-API-OPENAPI.yaml`.
+| Area | Current capability |
+|---|---|
+| Rust eMule agent | One runtime agent for Kad and eD2K, with shared service contracts, runtime config, stats, search, enrichment/download, local ingest, and seed-publish entry points. |
+| Kad | Startup, routing, bootstrap, keyword/source/notes search, keyword/source/notes publish, sender-key/ack handling, obfuscated and plaintext live keyword evidence, and deterministic harness coverage. |
+| eD2K server path | Server login, capability negotiation, server list handling, keyword search, source search, background source search, UDP source search, offer-files, large-file size tags, and same-server source-discovery instrumentation. |
+| eD2K peer path | Client hello, secure-ident handling, HASHSET2/FileIdentifier flows, compressed part transfer, native download, listener upload, resume, queue ranking, callback-issued source acquisition, plaintext and obfuscated transport coverage. |
+| File sharing | Local file ingest, MD4/AICH generation, completed transfer manifests, verified shared catalog entries, re-offer of completed files, and serving from verified local payloads. |
+| Hashing and AICH | ED2K MD4 part hashsets, modern AICH root/part trees, validation, persistence, local generation, and large-file AICH closure scenarios. |
+| Coordinator | SvelteKit/Node coordinator, REST/SSE surfaces, agent registration, job dispatch, search store, Prisma/PostgreSQL schema ownership, dedup-oriented file records, and local DB helper. |
+| Tooling | Versioned scenario manifests, campaign inventory, deterministic eMule harness runners, real-network runners, parity summaries, source-size guards, line-ending guards, tracked-file privacy guards, and workspace quality automation. |
 
-## Repo Surfaces
+## Current RC1 Focus
+
+The near-term target is `p2p-overlord` `0.1.1-rc.1` with full Kad/eD2K support
+for file sharing and downloading. The active work is narrow and concrete:
+
+- close the large-file eD2K AICH real-network cell by fixing same-server live
+  source discovery;
+- align the coordinator API with the agent so eD2K keyword, source, and notes
+  jobs are all reachable through the public product path;
+- finish or truthfully de-advertise eD2K preview and shared-files/shared-directory
+  browsing surfaces;
+- complete LowID callback/buddy state transitions and broader downloader
+  scheduling behavior;
+- add more Kad live confidence for source/notes/publish acceptance;
+- keep upload queue behavior stock-like where peers can observe it.
+
+Durable eD2K credit accounting is intentionally not an RC1 gate. Peer-visible
+queue rank, LowID behavior, slot promotion, callback handling, and truthful
+capability adverts still matter.
+
+For the working RC1 checklist, see
+[docs/RC1_PARITY_EXECUTION_PLAN.md](docs/RC1_PARITY_EXECUTION_PLAN.md).
+For version, branch, tag, and GitHub milestone rules, see
+[docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md).
+
+## Evidence, Not Handwaving
+
+The project keeps protocol claims tied to executable scenario manifests. The
+current matrix includes:
+
+- `ed2k.campaign.downloader-startup.v1`
+- `ed2k.campaign.source-acquisition.v1`
+- `ed2k.campaign.listener-serving.v1`
+- `ed2k.campaign.queue-and-slot.v1`
+- `ed2k.campaign.resume.v1`
+- `ed2k.campaign.callback.v1`
+- `ed2k.campaign.surface.v1`
+- `ed2k.campaign.modern-aich.v1`
+- `ed2k.campaign.realnet-confidence.v1`
+- `kad2.campaign.private-confidence.v1`
+- `kad2.campaign.publish-families.v1`
+- `kad2.campaign.search-families.private.v1`
+- `kad2.campaign.realnet-confidence.v1`
+- `kad2.campaign.routing-and-transport.v1`
+
+Private cells run against deterministic harnesses. Live cells are explicitly
+marked and require the workspace live-network prerequisites.
+
+Useful inspection commands from `../p2p-overlord-tooling`:
+
+```console
+python -m overlord_tooling show-parity-matrix --availability available --protocol ed2k
+python -m overlord_tooling show-parity-matrix --availability available --protocol kad2
+python -m pytest tests/e2e/test_manifests.py tests/e2e/test_scenario_catalog.py -q
+```
+
+## Repository Map
+
+This repo is the backend/coordinator repo. The p2p-overlord workspace is split
+across three active repositories:
+
+| Repository | Role |
+|---|---|
+| `p2p-overlord-be` | Coordinator, public/backend API, SSR UI, Prisma schema, PostgreSQL helper, product docs. |
+| `p2p-overlord-agents` | Rust protocol agents and protocol crates. Current runtime agent: `overlord-agent-emule`. |
+| `p2p-overlord-tooling` | Scenario manifests, parity runners, harness orchestration, reports, and workspace quality guards. |
+
+Current in-tree backend surfaces:
 
 | Surface | Kind | Status | Notes |
 |---|---|---|---|
-| `overlord-be-coordinator` | Node package | `current` | SvelteKit coordinator, API, SSR UI, Prisma schema owner |
-| `overlord-be-db` | Ops helper | `current` | Windows-only local PostgreSQL bootstrap/runtime helper for backend development |
-
----
+| `overlord-be-coordinator` | Node package | current | SvelteKit coordinator, API, SSR UI, Prisma schema owner. |
+| `overlord-be-db` | Ops helper | current | Windows local PostgreSQL bootstrap/runtime helper for backend development. |
 
 ## Architecture
 
-### Coordinator  (SVC-001)
-
 ```mermaid
 flowchart TD
-    Browser["🌐 Browser"]
-    Agents["Indexer Agents\nSVC-002 … SVC-005"]
+    Browser["Browser"]
+    Agents["Rust indexer agents"]
 
-    Browser -->|"SSR pages · REST queries · SSE live feed"| UI
+    Browser -->|"SSR pages, REST queries, SSE live feed"| UI
 
-    subgraph COORD["SVC-001 · overlord-be-coordinator · :13300  ·  SvelteKit / Node.js"]
+    subgraph COORD["SVC-001: overlord-be-coordinator, SvelteKit / Node.js"]
         direction TB
-        UI["SSR Frontend"]
+        UI["SSR frontend"]
         API["REST + SSE API"]
-        Dispatch["Job Dispatcher\nfan-out · round-robin · least-busy"]
-        Dedup["Dedup Engine\ncross-protocol · cross-torrent"]
-        DLM["Download Manager\nMetalink 4 / RFC 5854"]
-        DB[("PostgreSQL · Prisma")]
+        Dispatch["Job dispatcher"]
+        Dedup["Dedup engine"]
+        DLM["Download manager"]
+        DB[("PostgreSQL via Prisma")]
 
         UI <--> API
         API <--> DB
@@ -60,123 +143,87 @@ flowchart TD
         API --> DLM
     end
 
-    subgraph DLC["Download Clients"]
+    subgraph EMULE["SVC-002: overlord-agent-emule, Rust"]
         direction LR
-        aria2["aria2  ·  JSON-RPC"]
-        qbt["qBittorrent  ·  HTTP API"]
+        E["IndexerService"]
+        E --> KAD["Kad crawler/search/publish"]
+        E --> ED2K["eD2K server and peer client"]
+        E --> SQ["snoop queue"]
     end
 
-    Dispatch -->|"search · enrich · config-update · seed-popular"| Agents
-    Agents   -->|"results · enrich-result · register · snoop-flush"| API
-    Agents   -->|"results · enrich-result"| Dedup
-
-    DLM -->|"Metalink 4"| aria2
-    DLM -->|"Metalink 4"| qbt
-```
-
-### Indexer Agents (Target State, SVC-002 … SVC-005)
-
-The agent graph below is the target-state service map. In the current tree, `overlord-agent-emule` is the implemented agent package; the other protocol-specific services remain planned.
-
-```mermaid
-flowchart TD
-    COORD["SVC-001 · overlord-be-coordinator\n:13300"]
-
-    subgraph SVC002["SVC-002 · overlord-agent-emule · :13301"]
-        direction LR
-        E["IndexerService"] --> E_KAD["KAD crawler\n:41000 UDP"]
-        E --> E_ED2K["ED2K client\n:41001 TCP"]
-        E --> E_SQ["snoop queue"]
-    end
-
-    subgraph SVC003["SVC-003 · overlord-agent-mainline · :13302"]
-        direction LR
-        M["IndexerService"] --> M_DHT["BT DHT crawler\n:41002 UDP+TCP"]
-        M --> M_SQ["snoop queue"]
-    end
-
-    subgraph SVC004["SVC-004 · overlord-agent-gnutella · :13303"]
-        direction LR
-        G["IndexerService"] --> G_G2["Gnutella G2\n:41003 TCP"]
-        G --> G_SQ["snoop queue"]
-    end
-
-    subgraph SVC005["SVC-005 · overlord-agent-ipfs · :13304"]
-        direction LR
-        I["IndexerService"] --> I_LP["libp2p / IPFS\n:41004 TCP"]
-        I --> I_SQ["snoop queue"]
-    end
-
-    subgraph NETWORKS["P2P Networks  ·  passive crawl 24/7  ·  active search  ·  DHT seeding"]
+    subgraph NETWORKS["P2P networks"]
         direction TB
-        NET_E["eMule KAD / ED2K"]
-        NET_B["BitTorrent DHT"]
-        NET_G["Gnutella 2"]
-        NET_I["IPFS"]
+        NET_E["eMule Kad / eD2K"]
+        NET_B["BitTorrent DHT, planned"]
+        NET_G["Gnutella G2, planned"]
+        NET_I["IPFS, planned"]
     end
 
-    COORD -->|"search · enrich · config-update · seed-popular"| E
-    COORD -->|"search · enrich · config-update · seed-popular"| M
-    COORD -->|"search · enrich · config-update"| G
-    COORD -->|"search · enrich · config-update"| I
-
-    E    -->|"results · enrich-result · register"| COORD
-    E_SQ -->|"snoop-flush"| COORD
-    M    -->|"results · enrich-result · register"| COORD
-    M_SQ -->|"snoop-flush"| COORD
-    G    -->|"results · register"| COORD
-    G_SQ -->|"snoop-flush"| COORD
-    I    -->|"results · register"| COORD
-    I_SQ -->|"snoop-flush"| COORD
-
-    E_KAD  <--> NET_E
-    E_ED2K <--> NET_E
-    M_DHT  <--> NET_B
-    G_G2   <--> NET_G
-    I_LP   <--> NET_I
+    Dispatch -->|"search, enrich, config-update, seed-popular"| E
+    E -->|"results, enrich-result, register"| API
+    SQ -->|"snoop-flush"| API
+    KAD <--> NET_E
+    ED2K <--> NET_E
 ```
 
----
+## Service Roadmap
 
-## How it works
-
-| Layer | What it does |
-|---|---|
-| **Coordinator** (Node.js) | Owns the database, exposes the public REST API and SSR frontend, dispatches jobs to indexers, manages downloads via Metalink 4 |
-| **Indexer agents** (Rust) | Stateless protocol daemons — only need `OVERLORD_COORDINATOR_URL`. `overlord-agent-emule` is current; the broader per-protocol set remains target-state |
-| **Cross-protocol dedup** | Same file found on multiple networks → one DB record, multiple source sets. Same file in multiple torrents → one canonical record |
-| **Always crawling** | Passive crawl runs 24/7 regardless of user activity |
-| **Active search** | User queries fan out to all registered indexer instances simultaneously |
-| **Download** | Coordinator generates Metalink 4 files combining all known hashes/sources and hands them to aria2 or qBittorrent |
-
-## Services
-
-| ID | Package | Status | Port | P2P |
+| ID | Package | Status | Default port | P2P surface |
 |---|---|---|---|---|
-| SVC-001 | `overlord-be-coordinator` | `current` | 13300 | — |
-| SVC-002 | `overlord-agent-emule` | `current` | 13301 | 41000 UDP (KAD), 41001 TCP (ED2K) |
-| SVC-003 | `overlord-agent-mainline` | `planned` | 13302 | 41002 UDP+TCP (BT DHT) |
-| SVC-004 | `overlord-agent-gnutella` | `planned` | 13303 | 41003 TCP (G2) |
-| SVC-005 | `overlord-agent-ipfs` | `planned` | 13304 | 41004 TCP (libp2p) |
+| SVC-001 | `overlord-be-coordinator` | current | 13300 | Coordinator/API/UI |
+| SVC-002 | `overlord-agent-emule` | current | 13301 | Kad UDP, eD2K TCP |
+| SVC-003 | `overlord-agent-mainline` | planned | 13302 | BitTorrent DHT |
+| SVC-004 | `overlord-agent-gnutella` | planned | 13303 | Gnutella G2 |
+| SVC-005 | `overlord-agent-ipfs` | planned | 13304 | IPFS/libp2p |
 
-All ports are configurable via the central TOML. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for configuration, [docs/ROADMAP.md](docs/ROADMAP.md) for phases, [docs/COORDINATOR.md](docs/COORDINATOR.md) for APIs and schema ownership, and [docs/ID_INDEX.md](docs/ID_INDEX.md) for the tracked ID registry.
+All ports are configurable. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+for backend configuration and the
+[agent protocol docs](https://github.com/emulebb/p2p-overlord-agents/tree/develop/docs)
+for protocol details.
 
-## Validation Baseline
+## Backend Development
 
-Use direct repo commands before finishing changes:
+Primary backend package:
 
-- Repo-local rules are tracked in `./AGENTS.md`.
-- Agents repo: run `cargo fmt --all --check` and
-  `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::all -W clippy::too_many_arguments -W clippy::type_complexity -W clippy::cognitive_complexity`.
-- Coordinator repo: run `npm run windows:quality`.
-- Coordinator repo portable alias: run `npm run quality`.
-- Privacy guard: from `p2p-overlord-tooling`, run
-  `python -m overlord_tooling guard-tracked-files --repo-root ../p2p-overlord-be`.
+```console
+cd overlord-be-coordinator
+npm install
+npm run prisma:generate
+npm run prisma:validate
+npm run check
+```
 
-Coordinator baseline details:
+Useful workspace checks from `../p2p-overlord-tooling`:
 
-- `npm run check`
-- `npm run prisma:validate`
-- `npm run prisma:generate`
+```console
+python -m overlord_tooling guard-tracked-files --repo-root ../p2p-overlord-be
+python -m overlord_tooling guard-line-endings --repo-root ../p2p-overlord-be
+python -m overlord_tooling quality-baseline
+```
 
-For coordinator persisted-schema edits, this quality baseline is not enough by itself. After schema changes, also reset and rebuild the local DB through `overlord-be-db` and confirm the live schema still matches the canonical `snake_case` naming.
+For persisted schema edits, backend checks are not enough by themselves. Reset
+and rebuild the local database through `overlord-be-db`, then confirm the live
+schema still matches the canonical Prisma naming.
+
+## Docs
+
+- [Backend docs](docs/README.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Coordinator](docs/COORDINATOR.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Roadmap](docs/ROADMAP.md)
+- [RC1 parity execution plan](docs/RC1_PARITY_EXECUTION_PLAN.md)
+- [Release policy](docs/RELEASE_POLICY.md)
+- [Active backlog](BACKLOG.md)
+- [Agent protocol docs](https://github.com/emulebb/p2p-overlord-agents/tree/develop/docs)
+- [Tooling docs](https://github.com/emulebb/p2p-overlord-tooling/tree/develop/docs)
+
+## eMuleBB Product-Family Contracts
+
+This repo lives under `https://github.com/emulebb/p2p-overlord-be`. The
+coordinator owns its internal REST/SSE API, but any eMuleBB-compatible `/api/v1`
+surface must prove its claimed subset against
+`repos/emulebb-tooling/docs/rest/REST-API-OPENAPI.yaml`.
+
+Deterministic eD2K server scenarios should use the eMuleBB `goed2k-server` fork.
+Historical p2p-overlord eD2K server lineage is reference material only.

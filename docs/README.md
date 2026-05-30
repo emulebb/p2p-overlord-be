@@ -19,6 +19,8 @@ Current repo surfaces:
 
 - [Configuration](./CONFIGURATION.md)
 - [Containerization](./CONTAINERIZATION.md)
+- [p2p-overlord RC1 Parity Execution Plan](./RC1_PARITY_EXECUTION_PLAN.md)
+- [p2p-overlord Release Policy](./RELEASE_POLICY.md)
 - [Roadmap](./ROADMAP.md)
 - [ID Index](./ID_INDEX.md)
 
